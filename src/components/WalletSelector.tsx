@@ -20,9 +20,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Plus, Wallet } from 'lucide-react';
+import { Plus, Wallet, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 
 interface WalletSelectorProps {
   selectedWalletId: string | null;
@@ -31,6 +47,9 @@ interface WalletSelectorProps {
 
 export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelectorProps) => {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingWallet, setEditingWallet] = useState<any>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const { toast } = useToast();
@@ -92,9 +111,81 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
     },
   });
 
+  const updateWallet = useMutation({
+    mutationFn: async ({ id, name, description }: { id: string; name: string; description: string }) => {
+      const { error } = await supabase
+        .from('wallets')
+        .update({ name, description })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      setEditOpen(false);
+      setEditingWallet(null);
+      setName('');
+      setDescription('');
+      toast({
+        title: t('common.success'),
+        description: 'Wallet updated successfully!',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteWallet = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('wallets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallets'] });
+      setDeleteId(null);
+      if (selectedWalletId === deleteId) {
+        onSelectWallet('');
+      }
+      toast({
+        title: t('common.success'),
+        description: 'Wallet deleted successfully!',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createWallet.mutate({ name, description });
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingWallet) {
+      updateWallet.mutate({ id: editingWallet.id, name, description });
+    }
+  };
+
+  const handleEdit = (wallet: any) => {
+    setEditingWallet(wallet);
+    setName(wallet.name);
+    setDescription(wallet.description || '');
+    setEditOpen(true);
   };
 
   if (isLoading) {
@@ -104,21 +195,49 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
   return (
     <div className="flex items-center gap-3">
       {wallets && wallets.length > 0 ? (
-        <Select value={selectedWalletId || undefined} onValueChange={onSelectWallet}>
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder={t('wallet.select')} />
-          </SelectTrigger>
-          <SelectContent>
-            {wallets.map((wallet) => (
-              <SelectItem key={wallet.id} value={wallet.id}>
-                <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4" />
-                  {wallet.name}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={selectedWalletId || undefined} onValueChange={onSelectWallet}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder={t('wallet.select')} />
+            </SelectTrigger>
+            <SelectContent>
+              {wallets.map((wallet) => (
+                <SelectItem key={wallet.id} value={wallet.id}>
+                  <div className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4" />
+                    {wallet.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {selectedWalletId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => {
+                  const wallet = wallets.find(w => w.id === selectedWalletId);
+                  if (wallet) handleEdit(wallet);
+                }}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Wallet
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setDeleteId(selectedWalletId)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Wallet
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">{t('wallet.noWallets')}</p>
       )}
@@ -160,6 +279,59 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Wallet Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Wallet</DialogTitle>
+            <DialogDescription>Update your wallet information</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editWalletName">{t('wallet.name')}</Label>
+              <Input
+                id="editWalletName"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editDescription">{t('wallet.description')}</Label>
+              <Textarea
+                id="editDescription"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={updateWallet.isPending}>
+              {updateWallet.isPending ? 'Updating...' : 'Update Wallet'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Wallet</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this wallet? All transactions in this wallet will also be deleted. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId && deleteWallet.mutate(deleteId)}
+              className="bg-destructive text-destructive-foreground"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -11,7 +11,7 @@ import { Charts } from '@/components/Dashboard/Charts';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LogOut, TrendingUp } from 'lucide-react';
+import { LogOut, TrendingUp, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -96,6 +96,9 @@ const Index = () => {
                 selectedWalletId={selectedWalletId}
                 onSelectWallet={setSelectedWalletId}
               />
+              <Button variant="outline" size="icon" onClick={() => navigate('/reports')}>
+                <FileText className="w-4 h-4" />
+              </Button>
               <ThemeToggle />
               <LanguageToggle />
               <Button variant="outline" size="icon" onClick={handleLogout}>
