@@ -1,21 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WalletSelector } from '@/components/WalletSelector';
 import { TransactionForm } from '@/components/TransactionForm';
 import { TransactionList } from '@/components/TransactionList';
 import { StatsCards } from '@/components/Dashboard/StatsCards';
 import { Charts } from '@/components/Dashboard/Charts';
+import { DateRangeFilter } from '@/components/DateRangeFilter';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LogOut, TrendingUp, FileText } from 'lucide-react';
+import { LogOut, TrendingUp, FileText, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { subDays, format as formatDate } from 'date-fns';
 
 const Index = () => {
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -25,7 +31,18 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate('/auth');
+        return;
       }
+
+      // Check admin status
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      setIsAdmin(!!data);
     };
 
     checkAuth();
@@ -39,7 +56,7 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: allTransactions = [], isLoading } = useQuery({
     queryKey: ['transactions', selectedWalletId],
     queryFn: async () => {
       if (!selectedWalletId) return [];
@@ -55,6 +72,26 @@ const Index = () => {
     },
     enabled: !!selectedWalletId,
   });
+
+  const transactions = useMemo(() => {
+    return allTransactions.filter(transaction => {
+      let dateMatch = true;
+      if (startDate) {
+        dateMatch = dateMatch && new Date(transaction.transaction_date) >= new Date(startDate);
+      }
+      if (endDate) {
+        dateMatch = dateMatch && new Date(transaction.transaction_date) <= new Date(endDate);
+      }
+      return dateMatch;
+    });
+  }, [allTransactions, startDate, endDate]);
+
+  const handleQuickFilter = (days: number) => {
+    const end = new Date();
+    const start = subDays(end, days);
+    setStartDate(formatDate(start, 'yyyy-MM-dd'));
+    setEndDate(formatDate(end, 'yyyy-MM-dd'));
+  };
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -99,6 +136,11 @@ const Index = () => {
               <Button variant="outline" size="icon" onClick={() => navigate('/reports')}>
                 <FileText className="w-4 h-4" />
               </Button>
+              {isAdmin && (
+                <Button variant="outline" size="icon" onClick={() => navigate('/admin')}>
+                  <Shield className="w-4 h-4" />
+                </Button>
+              )}
               <ThemeToggle />
               <LanguageToggle />
               <Button variant="outline" size="icon" onClick={handleLogout}>
@@ -128,6 +170,22 @@ const Index = () => {
               totalExpense={totalExpense}
               netBalance={netBalance}
             />
+
+            {/* Date Range Filter */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle>{t('filter.dateRange')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DateRangeFilter
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                  onQuickFilter={handleQuickFilter}
+                />
+              </CardContent>
+            </Card>
 
             {/* Action Bar */}
             <div className="flex justify-between items-center">

@@ -77,12 +77,54 @@ const translations = {
     'filter.category': 'Category',
     'filter.all': 'All',
     
+    // Reports
+    'reports.title': 'Reports',
+    'reports.filters': 'Filters',
+    'reports.wallet': 'Wallet',
+    'reports.allWallets': 'All Wallets',
+    'reports.allCategories': 'All Categories',
+    'reports.allTypes': 'All Types',
+    'reports.type': 'Type',
+    'reports.startDate': 'Start Date',
+    'reports.endDate': 'End Date',
+    'reports.totalIncome': 'Total Income',
+    'reports.totalExpense': 'Total Expense',
+    'reports.netBalance': 'Net Balance',
+    'reports.downloadExcel': 'Download Excel',
+    'reports.downloadPDF': 'Download PDF',
+    'reports.noTransactions': 'No transactions found',
+    
+    // Quick Filters
+    'filter.last7days': 'Last 7 Days',
+    'filter.last40days': 'Last 40 Days',
+    'filter.last60days': 'Last 60 Days',
+    'filter.last90days': 'Last 90 Days',
+    'filter.custom': 'Custom Range',
+    
+    // Admin
+    'admin.title': 'Admin Panel',
+    'admin.users': 'User Management',
+    'admin.wallets': 'All Wallets',
+    'admin.transactions': 'All Transactions',
+    'admin.roles': 'User Roles',
+    'admin.email': 'Email',
+    'admin.role': 'Role',
+    'admin.createdAt': 'Created At',
+    'admin.actions': 'Actions',
+    'admin.makeAdmin': 'Make Admin',
+    'admin.removeAdmin': 'Remove Admin',
+    'admin.totalUsers': 'Total Users',
+    'admin.totalWallets': 'Total Wallets',
+    'admin.totalTransactions': 'Total Transactions',
+    'admin.owner': 'Owner',
+    
     // Common
     'common.loading': 'Loading...',
     'common.error': 'Error',
     'common.success': 'Success',
     'common.darkMode': 'Dark Mode',
     'common.lightMode': 'Light Mode',
+    'common.home': 'Home',
   },
   id: {
     // Auth
@@ -152,12 +194,54 @@ const translations = {
     'filter.category': 'Kategori',
     'filter.all': 'Semua',
     
+    // Reports
+    'reports.title': 'Laporan',
+    'reports.filters': 'Filter',
+    'reports.wallet': 'Dompet',
+    'reports.allWallets': 'Semua Dompet',
+    'reports.allCategories': 'Semua Kategori',
+    'reports.allTypes': 'Semua Tipe',
+    'reports.type': 'Tipe',
+    'reports.startDate': 'Tanggal Mulai',
+    'reports.endDate': 'Tanggal Akhir',
+    'reports.totalIncome': 'Total Pendapatan',
+    'reports.totalExpense': 'Total Pengeluaran',
+    'reports.netBalance': 'Saldo Bersih',
+    'reports.downloadExcel': 'Unduh Excel',
+    'reports.downloadPDF': 'Unduh PDF',
+    'reports.noTransactions': 'Tidak ada transaksi',
+    
+    // Quick Filters
+    'filter.last7days': '7 Hari Terakhir',
+    'filter.last40days': '40 Hari Terakhir',
+    'filter.last60days': '60 Hari Terakhir',
+    'filter.last90days': '90 Hari Terakhir',
+    'filter.custom': 'Rentang Khusus',
+    
+    // Admin
+    'admin.title': 'Panel Admin',
+    'admin.users': 'Manajemen Pengguna',
+    'admin.wallets': 'Semua Dompet',
+    'admin.transactions': 'Semua Transaksi',
+    'admin.roles': 'Peran Pengguna',
+    'admin.email': 'Email',
+    'admin.role': 'Peran',
+    'admin.createdAt': 'Dibuat Pada',
+    'admin.actions': 'Tindakan',
+    'admin.makeAdmin': 'Jadikan Admin',
+    'admin.removeAdmin': 'Hapus Admin',
+    'admin.totalUsers': 'Total Pengguna',
+    'admin.totalWallets': 'Total Dompet',
+    'admin.totalTransactions': 'Total Transaksi',
+    'admin.owner': 'Pemilik',
+    
     // Common
     'common.loading': 'Memuat...',
     'common.error': 'Kesalahan',
     'common.success': 'Berhasil',
     'common.darkMode': 'Mode Gelap',
     'common.lightMode': 'Mode Terang',
+    'common.home': 'Beranda',
   },
 };
 

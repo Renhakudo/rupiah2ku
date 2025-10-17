@@ -12,17 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DateRangeFilter } from '@/components/DateRangeFilter';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatCurrency } from '@/lib/currency';
-import { LogOut, TrendingUp, Download, FileSpreadsheet, FileText, Home } from 'lucide-react';
+import { LogOut, TrendingUp, FileSpreadsheet, FileText, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Input } from '@/components/ui/input';
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -95,6 +95,13 @@ const Reports = () => {
     const cats = new Set(allTransactions.map(t => t.category));
     return Array.from(cats);
   }, [allTransactions]);
+
+  const handleQuickFilter = (days: number) => {
+    const end = new Date();
+    const start = subDays(end, days);
+    setStartDate(format(start, 'yyyy-MM-dd'));
+    setEndDate(format(end, 'yyyy-MM-dd'));
+  };
 
   const totalIncome = filteredTransactions
     .filter(t => t.type === 'income')
@@ -205,24 +212,34 @@ const Reports = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold">Reports</h2>
+            <h2 className="text-3xl font-bold">{t('reports.title')}</h2>
           </div>
 
           {/* Filters */}
           <Card className="shadow-soft">
             <CardHeader>
-              <CardTitle>Filters</CardTitle>
+              <CardTitle>{t('reports.filters')}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardContent className="space-y-6">
+              {/* Date Range Filter with Quick Buttons */}
+              <DateRangeFilter
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onQuickFilter={handleQuickFilter}
+              />
+
+              {/* Other Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Wallet</Label>
+                  <Label>{t('reports.wallet')}</Label>
                   <Select value={selectedWalletId} onValueChange={setSelectedWalletId}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Wallets</SelectItem>
+                      <SelectItem value="all">{t('reports.allWallets')}</SelectItem>
                       {wallets.map((wallet) => (
                         <SelectItem key={wallet.id} value={wallet.id}>
                           {wallet.name}
@@ -233,13 +250,13 @@ const Reports = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label>{t('transaction.category')}</Label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="all">{t('reports.allCategories')}</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {t(`category.${cat}`)}
@@ -250,35 +267,17 @@ const Reports = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Type</Label>
+                  <Label>{t('reports.type')}</Label>
                   <Select value={selectedType} onValueChange={setSelectedType}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="all">{t('reports.allTypes')}</SelectItem>
+                      <SelectItem value="income">{t('transaction.income')}</SelectItem>
+                      <SelectItem value="expense">{t('transaction.expense')}</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
                 </div>
               </div>
             </CardContent>
@@ -289,7 +288,7 @@ const Reports = () => {
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Income
+                  {t('reports.totalIncome')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -302,7 +301,7 @@ const Reports = () => {
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Expense
+                  {t('reports.totalExpense')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -315,7 +314,7 @@ const Reports = () => {
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Net Balance
+                  {t('reports.netBalance')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -330,30 +329,30 @@ const Reports = () => {
           <div className="flex gap-4">
             <Button onClick={downloadExcel} className="flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4" />
-              Download Excel
+              {t('reports.downloadExcel')}
             </Button>
             <Button onClick={downloadPDF} variant="outline" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Download PDF
+              {t('reports.downloadPDF')}
             </Button>
           </div>
 
           {/* Transactions Table */}
           <Card className="shadow-soft">
             <CardHeader>
-              <CardTitle>Transactions ({filteredTransactions.length})</CardTitle>
+              <CardTitle>{t('dashboard.transactions')} ({filteredTransactions.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-3 font-medium">Date</th>
-                      <th className="text-left p-3 font-medium">Wallet</th>
-                      <th className="text-left p-3 font-medium">Type</th>
-                      <th className="text-left p-3 font-medium">Category</th>
-                      <th className="text-left p-3 font-medium">Amount</th>
-                      <th className="text-left p-3 font-medium">Description</th>
+                      <th className="text-left p-3 font-medium">{t('transaction.date')}</th>
+                      <th className="text-left p-3 font-medium">{t('reports.wallet')}</th>
+                      <th className="text-left p-3 font-medium">{t('transaction.type')}</th>
+                      <th className="text-left p-3 font-medium">{t('transaction.category')}</th>
+                      <th className="text-left p-3 font-medium">{t('transaction.amount')}</th>
+                      <th className="text-left p-3 font-medium">{t('transaction.description')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -363,7 +362,7 @@ const Reports = () => {
                           {format(new Date(transaction.transaction_date), 'PP')}
                         </td>
                         <td className="p-3 text-sm">{(transaction.wallets as any)?.name || 'N/A'}</td>
-                        <td className="p-3 text-sm capitalize">{transaction.type}</td>
+                        <td className="p-3 text-sm capitalize">{t(`transaction.${transaction.type}`)}</td>
                         <td className="p-3 text-sm">{t(`category.${transaction.category}`)}</td>
                         <td className={`p-3 text-sm font-semibold ${
                           transaction.type === 'income' ? 'text-success' : 'text-destructive'
@@ -380,7 +379,7 @@ const Reports = () => {
                 </table>
                 {filteredTransactions.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    No transactions found
+                    {t('reports.noTransactions')}
                   </div>
                 )}
               </div>
