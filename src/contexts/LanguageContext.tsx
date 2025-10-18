@@ -71,6 +71,8 @@ const translations = {
     'chart.categoryBreakdown': 'Category Breakdown',
     'chart.monthlyGrowth': 'Monthly Growth Rate',
     'chart.walletComparison': 'Wallet Comparison',
+    'chart.monthly': 'Monthly',
+    'chart.daily': 'Daily',
     
     // Filters
     'filter.dateRange': 'Date Range',
@@ -188,6 +190,8 @@ const translations = {
     'chart.categoryBreakdown': 'Rincian Kategori',
     'chart.monthlyGrowth': 'Tingkat Pertumbuhan Bulanan',
     'chart.walletComparison': 'Perbandingan Dompet',
+    'chart.monthly': 'Bulanan',
+    'chart.daily': 'Harian',
     
     // Filters
     'filter.dateRange': 'Rentang Tanggal',

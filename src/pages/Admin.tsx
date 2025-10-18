@@ -173,22 +173,22 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-bold">{t('admin.title')}</h1>
+              <h1 className="text-lg sm:text-2xl font-bold">{t('admin.title')}</h1>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" onClick={() => navigate('/')}>
-                <Home className="w-4 h-4" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button variant="outline" size="icon" onClick={() => navigate('/')} className="h-8 w-8 sm:h-10 sm:w-10">
+                <Home className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               <ThemeToggle />
               <LanguageToggle />
-              <Button variant="outline" size="icon" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" />
+              <Button variant="outline" size="icon" onClick={handleLogout} className="h-8 w-8 sm:h-10 sm:w-10">
+                <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
@@ -196,8 +196,8 @@ const Admin = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
+      <main className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="space-y-4 sm:space-y-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="shadow-soft">
@@ -250,10 +250,10 @@ const Admin = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-3 font-medium">{t('admin.email')}</th>
-                      <th className="text-left p-3 font-medium">{t('admin.role')}</th>
-                      <th className="text-left p-3 font-medium">{t('admin.createdAt')}</th>
-                      <th className="text-left p-3 font-medium">{t('admin.actions')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm">{t('admin.email')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden sm:table-cell">{t('admin.role')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden md:table-cell">{t('admin.createdAt')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm">{t('admin.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -261,18 +261,20 @@ const Admin = () => {
                       const userIsAdmin = Array.isArray(user.user_roles) && user.user_roles.some((r: any) => r.role === 'admin');
                       return (
                         <tr key={user.id} className="border-b hover:bg-accent/50 transition-smooth">
-                          <td className="p-3 text-sm">{user.id}</td>
-                          <td className="p-3 text-sm">
+                          <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                            <div className="max-w-[150px] sm:max-w-none truncate">{user.full_name || user.id}</div>
+                          </td>
+                          <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">
                             <span className={`px-2 py-1 rounded text-xs ${
                               userIsAdmin ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                             }`}>
                               {userIsAdmin ? 'Admin' : 'User'}
                             </span>
                           </td>
-                          <td className="p-3 text-sm">
+                          <td className="p-2 sm:p-3 text-xs sm:text-sm hidden md:table-cell">
                             {format(new Date(user.created_at), 'PP')}
                           </td>
-                          <td className="p-3">
+                          <td className="p-2 sm:p-3">
                             <Button
                               size="sm"
                               variant={userIsAdmin ? 'destructive' : 'default'}
@@ -281,8 +283,10 @@ const Admin = () => {
                                 makeAdmin: !userIsAdmin
                               })}
                               disabled={toggleAdminMutation.isPending}
+                              className="text-xs sm:text-sm"
                             >
-                              {userIsAdmin ? t('admin.removeAdmin') : t('admin.makeAdmin')}
+                              <span className="hidden sm:inline">{userIsAdmin ? t('admin.removeAdmin') : t('admin.makeAdmin')}</span>
+                              <span className="sm:hidden">{userIsAdmin ? 'Remove' : 'Promote'}</span>
                             </Button>
                           </td>
                         </tr>
@@ -304,21 +308,21 @@ const Admin = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-3 font-medium">{t('wallet.name')}</th>
-                      <th className="text-left p-3 font-medium">{t('admin.owner')}</th>
-                      <th className="text-left p-3 font-medium">{t('wallet.description')}</th>
-                      <th className="text-left p-3 font-medium">{t('admin.createdAt')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm">{t('wallet.name')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden md:table-cell">{t('admin.owner')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden lg:table-cell">{t('wallet.description')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden sm:table-cell">{t('admin.createdAt')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {allWallets.map((wallet) => (
                       <tr key={wallet.id} className="border-b hover:bg-accent/50 transition-smooth">
-                        <td className="p-3 text-sm font-medium">{wallet.name}</td>
-                        <td className="p-3 text-sm">{(wallet.profiles as any)?.full_name || 'N/A'}</td>
-                        <td className="p-3 text-sm text-muted-foreground">
-                          {wallet.description || '-'}
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">{wallet.name}</td>
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm hidden md:table-cell">{(wallet.profiles as any)?.full_name || 'N/A'}</td>
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm text-muted-foreground hidden lg:table-cell">
+                          <div className="max-w-[200px] truncate">{wallet.description || '-'}</div>
                         </td>
-                        <td className="p-3 text-sm">
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">
                           {format(new Date(wallet.created_at), 'PP')}
                         </td>
                       </tr>
