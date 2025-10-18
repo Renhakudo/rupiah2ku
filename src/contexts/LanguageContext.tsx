@@ -103,6 +103,11 @@ const translations = {
     'filter.last90days': 'Last 90 Days',
     'filter.custom': 'Custom Range',
     
+    // Navigation
+    'nav.dashboard': 'Dashboard',
+    'nav.reports': 'Reports',
+    'nav.admin': 'Admin',
+    
     // Admin
     'admin.title': 'Admin Panel',
     'admin.users': 'User Management',
@@ -221,6 +226,11 @@ const translations = {
     'filter.last60days': '60 Hari Terakhir',
     'filter.last90days': '90 Hari Terakhir',
     'filter.custom': 'Rentang Khusus',
+    
+    // Navigation
+    'nav.dashboard': 'Dasbor',
+    'nav.reports': 'Laporan',
+    'nav.admin': 'Admin',
     
     // Admin
     'admin.title': 'Panel Admin',

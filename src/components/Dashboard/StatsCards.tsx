@@ -20,7 +20,7 @@ export const StatsCards = ({ totalIncome, totalExpense, netBalance }: StatsCards
           <Wallet className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(netBalance)}</div>
+          <div className="text-xl sm:text-2xl font-bold break-words">{formatCurrency(netBalance)}</div>
           <p className="text-xs text-muted-foreground mt-1">
             Total balance across wallet
           </p>
@@ -33,7 +33,7 @@ export const StatsCards = ({ totalIncome, totalExpense, netBalance }: StatsCards
           <TrendingUp className="w-4 h-4 text-success" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-success">{formatCurrency(totalIncome)}</div>
+          <div className="text-xl sm:text-2xl font-bold text-success break-words">{formatCurrency(totalIncome)}</div>
           <p className="text-xs text-muted-foreground mt-1">
             All income transactions
           </p>
@@ -46,7 +46,7 @@ export const StatsCards = ({ totalIncome, totalExpense, netBalance }: StatsCards
           <TrendingDown className="w-4 h-4 text-destructive" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpense)}</div>
+          <div className="text-xl sm:text-2xl font-bold text-destructive break-words">{formatCurrency(totalExpense)}</div>
           <p className="text-xs text-muted-foreground mt-1">
             All expense transactions
           </p>
