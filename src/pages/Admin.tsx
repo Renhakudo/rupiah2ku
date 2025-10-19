@@ -7,10 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LogOut, TrendingUp, Home, Shield, Users, Wallet, Receipt } from 'lucide-react';
+import { LogOut, Home, Shield, Users, Wallet, Receipt, UserPlus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { MobileNav } from '@/components/MobileNav';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -19,6 +23,11 @@ const Admin = () => {
   const queryClient = useQueryClient();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -107,6 +116,70 @@ const Admin = () => {
       return data || [];
     },
     enabled: isAdmin,
+  });
+
+  const addUserMutation = useMutation({
+    mutationFn: async ({ email, password, name }: { email: string; password: string; name: string }) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          }
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setIsAddUserOpen(false);
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserName('');
+      toast({
+        title: t('common.success'),
+        description: 'User added successfully',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user.id === userId) {
+        throw new Error('Cannot delete your own account');
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setDeleteUserId(null);
+      toast({
+        title: t('common.success'),
+        description: 'User deleted successfully',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: t('common.error'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
   });
 
   const toggleAdminMutation = useMutation({
@@ -198,19 +271,19 @@ const Admin = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 sm:py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
         <div className="space-y-4 sm:space-y-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
             <Card className="shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {t('admin.totalUsers')}
                 </CardTitle>
                 <Users className="w-4 h-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-xl sm:text-2xl font-bold break-words">{users.length}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {adminCount} admins
                 </p>
@@ -219,25 +292,25 @@ const Admin = () => {
 
             <Card className="shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {t('admin.totalWallets')}
                 </CardTitle>
                 <Wallet className="w-4 h-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{allWallets.length}</p>
+                <p className="text-xl sm:text-2xl font-bold break-words">{allWallets.length}</p>
               </CardContent>
             </Card>
 
             <Card className="shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {t('admin.totalTransactions')}
                 </CardTitle>
                 <Receipt className="w-4 h-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{allTransactions.length}</p>
+                <p className="text-xl sm:text-2xl font-bold break-words">{allTransactions.length}</p>
               </CardContent>
             </Card>
           </div>
@@ -245,17 +318,79 @@ const Admin = () => {
           {/* User Management */}
           <Card className="shadow-soft">
             <CardHeader>
-              <CardTitle>{t('admin.users')}</CardTitle>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <CardTitle className="text-lg sm:text-xl">{t('admin.users')}</CardTitle>
+                <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="w-full sm:w-auto">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-[95vw] sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add New User</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input
+                          id="name"
+                          value={newUserName}
+                          onChange={(e) => setNewUserName(e.target.value)}
+                          placeholder="John Doe"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={newUserEmail}
+                          onChange={(e) => setNewUserEmail(e.target.value)}
+                          placeholder="user@example.com"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={newUserPassword}
+                          onChange={(e) => setNewUserPassword(e.target.value)}
+                          placeholder="••••••••"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        onClick={() => {
+                          if (newUserEmail && newUserPassword && newUserName) {
+                            addUserMutation.mutate({
+                              email: newUserEmail,
+                              password: newUserPassword,
+                              name: newUserName
+                            });
+                          }
+                        }}
+                        disabled={addUserMutation.isPending || !newUserEmail || !newUserPassword || !newUserName}
+                      >
+                        {addUserMutation.isPending ? 'Adding...' : 'Add User'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm">{t('admin.email')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden sm:table-cell">{t('admin.role')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden md:table-cell">{t('admin.createdAt')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm">{t('admin.actions')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">Name</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden sm:table-cell">{t('admin.role')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden md:table-cell">{t('admin.createdAt')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">{t('admin.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -277,19 +412,30 @@ const Admin = () => {
                             {format(new Date(user.created_at), 'PP')}
                           </td>
                           <td className="p-2 sm:p-3">
-                            <Button
-                              size="sm"
-                              variant={userIsAdmin ? 'destructive' : 'default'}
-                              onClick={() => toggleAdminMutation.mutate({
-                                userId: user.id,
-                                makeAdmin: !userIsAdmin
-                              })}
-                              disabled={toggleAdminMutation.isPending}
-                              className="text-xs sm:text-sm"
-                            >
-                              <span className="hidden sm:inline">{userIsAdmin ? t('admin.removeAdmin') : t('admin.makeAdmin')}</span>
-                              <span className="sm:hidden">{userIsAdmin ? 'Remove' : 'Promote'}</span>
-                            </Button>
+                            <div className="flex gap-1 sm:gap-2">
+                              <Button
+                                size="sm"
+                                variant={userIsAdmin ? 'destructive' : 'default'}
+                                onClick={() => toggleAdminMutation.mutate({
+                                  userId: user.id,
+                                  makeAdmin: !userIsAdmin
+                                })}
+                                disabled={toggleAdminMutation.isPending}
+                                className="text-xs px-2 sm:px-3"
+                              >
+                                <span className="hidden sm:inline">{userIsAdmin ? t('admin.removeAdmin') : t('admin.makeAdmin')}</span>
+                                <span className="sm:hidden">{userIsAdmin ? 'Remove' : 'Promote'}</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setDeleteUserId(user.id)}
+                                disabled={deleteUserMutation.isPending}
+                                className="text-xs px-2 sm:px-3"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -303,17 +449,17 @@ const Admin = () => {
           {/* All Wallets */}
           <Card className="shadow-soft">
             <CardHeader>
-              <CardTitle>{t('admin.wallets')}</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">{t('admin.wallets')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+                <table className="w-full min-w-[500px]">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm">{t('wallet.name')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden md:table-cell">{t('admin.owner')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden lg:table-cell">{t('wallet.description')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-sm hidden sm:table-cell">{t('admin.createdAt')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">{t('wallet.name')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden md:table-cell">{t('admin.owner')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden lg:table-cell">{t('wallet.description')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden sm:table-cell">{t('admin.createdAt')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -336,6 +482,31 @@ const Admin = () => {
           </Card>
         </div>
       </main>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+        <AlertDialogContent className="max-w-[95vw] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone and will delete all associated wallets and transactions.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteUserId) {
+                  deleteUserMutation.mutate(deleteUserId);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
