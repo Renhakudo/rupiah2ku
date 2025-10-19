@@ -211,7 +211,7 @@ const Reports = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 sm:py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
         <div className="space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold">{t('reports.title')}</h2>

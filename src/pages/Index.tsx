@@ -150,7 +150,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 sm:py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
         {/* Mobile Wallet Selector */}
         <div className="md:hidden mb-4">
           <WalletSelector
@@ -169,7 +169,15 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-4 sm:space-y-8">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Desktop Wallet Selector */}
+            <div className="hidden md:block">
+              <WalletSelector
+                selectedWalletId={selectedWalletId}
+                onSelectWallet={setSelectedWalletId}
+              />
+            </div>
+
             {/* Stats Cards */}
             <StatsCards
               totalIncome={totalIncome}
