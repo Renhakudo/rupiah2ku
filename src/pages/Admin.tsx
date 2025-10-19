@@ -69,6 +69,10 @@ const Admin = () => {
   const { data: users = [] } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
+      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) throw authError;
+
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
@@ -81,10 +85,14 @@ const Admin = () => {
 
       if (rolesError) throw rolesError;
 
-      return (profiles || []).map(profile => ({
-        ...profile,
-        user_roles: (roles || []).filter(role => role.user_id === profile.id)
-      }));
+      return (profiles || []).map((profile: any) => {
+        const authUser = (authUsers || []).find((u: any) => u.id === profile.id);
+        return {
+          ...profile,
+          email: authUser?.email || 'N/A',
+          user_roles: (roles || []).filter((role: any) => role.user_id === profile.id)
+        };
+      });
     },
     enabled: isAdmin,
   });
@@ -92,13 +100,39 @@ const Admin = () => {
   const { data: allWallets = [] } = useQuery({
     queryKey: ['admin-wallets'],
     queryFn: async () => {
+      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) throw authError;
+
       const { data, error } = await supabase
         .from('wallets')
         .select('*, profiles(full_name)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Get transactions for balance calculation
+      const { data: transactions, error: txError } = await supabase
+        .from('transactions')
+        .select('wallet_id, amount, type');
+      
+      if (txError) throw txError;
+
+      return (data || []).map((wallet: any) => {
+        const authUser = (authUsers || []).find((u: any) => u.id === wallet.user_id);
+        
+        // Calculate balance
+        const walletTransactions = (transactions || []).filter((tx: any) => tx.wallet_id === wallet.id);
+        const balance = walletTransactions.reduce((sum: number, tx: any) => {
+          return sum + (tx.type === 'income' ? Number(tx.amount) : -Number(tx.amount));
+        }, 0);
+
+        return {
+          ...wallet,
+          email: authUser?.email || 'N/A',
+          balance
+        };
+      });
     },
     enabled: isAdmin,
   });
@@ -383,13 +417,15 @@ const Admin = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-2 sm:mx-0">
+                <table className="w-full min-w-[600px]">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">Name</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden sm:table-cell">{t('admin.role')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden md:table-cell">{t('admin.createdAt')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">User ID</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">Full Name</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden md:table-cell">Email</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">{t('admin.role')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden lg:table-cell">{t('admin.createdAt')}</th>
                       <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">{t('admin.actions')}</th>
                     </tr>
                   </thead>
@@ -399,16 +435,22 @@ const Admin = () => {
                       return (
                         <tr key={user.id} className="border-b hover:bg-accent/50 transition-smooth">
                           <td className="p-2 sm:p-3 text-xs sm:text-sm">
-                            <div className="max-w-[150px] sm:max-w-none truncate">{user.full_name || user.id}</div>
+                            <div className="max-w-[100px] truncate font-mono text-[10px] sm:text-xs">{user.id.slice(0, 8)}...</div>
                           </td>
-                          <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">
+                          <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                            <div className="max-w-[120px] sm:max-w-none truncate">{user.full_name || 'N/A'}</div>
+                          </td>
+                          <td className="p-2 sm:p-3 text-xs sm:text-sm hidden md:table-cell">
+                            <div className="max-w-[150px] truncate">{user.email}</div>
+                          </td>
+                          <td className="p-2 sm:p-3 text-xs sm:text-sm">
                             <span className={`px-2 py-1 rounded text-xs ${
                               userIsAdmin ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                             }`}>
                               {userIsAdmin ? 'Admin' : 'User'}
                             </span>
                           </td>
-                          <td className="p-2 sm:p-3 text-xs sm:text-sm hidden md:table-cell">
+                          <td className="p-2 sm:p-3 text-xs sm:text-sm hidden lg:table-cell">
                             {format(new Date(user.created_at), 'PP')}
                           </td>
                           <td className="p-2 sm:p-3">
@@ -453,24 +495,45 @@ const Admin = () => {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto -mx-2 sm:mx-0">
-                <table className="w-full min-w-[500px]">
+                <table className="w-full min-w-[700px]">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">{t('wallet.name')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden md:table-cell">{t('admin.owner')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden lg:table-cell">{t('wallet.description')}</th>
-                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden sm:table-cell">{t('admin.createdAt')}</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm">Owner Email</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden md:table-cell">Type</th>
+                      <th className="text-right p-2 sm:p-3 font-medium text-xs sm:text-sm">Balance</th>
+                      <th className="text-left p-2 sm:p-3 font-medium text-xs sm:text-sm hidden lg:table-cell">{t('admin.createdAt')}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {allWallets.map((wallet) => (
+                    {allWallets.map((wallet: any) => (
                       <tr key={wallet.id} className="border-b hover:bg-accent/50 transition-smooth">
-                        <td className="p-2 sm:p-3 text-xs sm:text-sm font-medium">{wallet.name}</td>
-                        <td className="p-2 sm:p-3 text-xs sm:text-sm hidden md:table-cell">{(wallet.profiles as any)?.full_name || 'N/A'}</td>
-                        <td className="p-2 sm:p-3 text-xs sm:text-sm text-muted-foreground hidden lg:table-cell">
-                          <div className="max-w-[200px] truncate">{wallet.description || '-'}</div>
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                          <div className="max-w-[120px] sm:max-w-none truncate font-medium">{wallet.name}</div>
+                          {wallet.description && (
+                            <div className="text-[10px] text-muted-foreground max-w-[150px] truncate">{wallet.description}</div>
+                          )}
                         </td>
-                        <td className="p-2 sm:p-3 text-xs sm:text-sm hidden sm:table-cell">
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                          <div className="max-w-[150px] truncate">{wallet.email}</div>
+                        </td>
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm hidden md:table-cell">
+                          <span className="px-2 py-1 rounded text-xs bg-muted text-muted-foreground">
+                            {wallet.currency}
+                          </span>
+                        </td>
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm text-right">
+                          <span className={`font-semibold ${
+                            wallet.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {new Intl.NumberFormat('id-ID', {
+                              style: 'currency',
+                              currency: wallet.currency,
+                              minimumFractionDigits: 0,
+                            }).format(wallet.balance)}
+                          </span>
+                        </td>
+                        <td className="p-2 sm:p-3 text-xs sm:text-sm hidden lg:table-cell">
                           {format(new Date(wallet.created_at), 'PP')}
                         </td>
                       </tr>
