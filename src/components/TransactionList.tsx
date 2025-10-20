@@ -77,35 +77,35 @@ export const TransactionList = ({ transactions, walletId }: TransactionListProps
           {transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-smooth gap-3"
+              className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-smooth"
             >
-              <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+              <div className="flex items-center gap-4 flex-1">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   transaction.type === 'income' ? 'bg-success/10' : 'bg-destructive/10'
                 }`}>
                   {transaction.type === 'income' ? (
-                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
+                    <TrendingUp className="w-5 h-5 text-success" />
                   ) : (
-                    <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-destructive" />
+                    <TrendingDown className="w-5 h-5 text-destructive" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <p className="font-medium text-sm sm:text-base truncate">{t(`category.${transaction.category}`)}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium truncate">{t(`category.${transaction.category}`)}</p>
                     <Badge variant={transaction.type === 'income' ? 'default' : 'secondary'} className="text-xs">
                       {t(`transaction.${transaction.type}`)}
                     </Badge>
                   </div>
                   {transaction.description && (
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{transaction.description}</p>
+                    <p className="text-sm text-muted-foreground truncate">{transaction.description}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
                     {format(new Date(transaction.transaction_date), 'PPP')}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-3">
-                <p className={`font-bold text-base sm:text-lg break-words ${
+              <div className="flex items-center gap-3">
+                <p className={`font-bold text-lg ${
                   transaction.type === 'income' ? 'text-success' : 'text-destructive'
                 }`}>
                   {transaction.type === 'income' ? '+' : '-'}
@@ -115,7 +115,7 @@ export const TransactionList = ({ transactions, walletId }: TransactionListProps
                   variant="ghost"
                   size="icon"
                   onClick={() => setDeleteId(transaction.id)}
-                  className="text-destructive hover:text-destructive flex-shrink-0"
+                  className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>

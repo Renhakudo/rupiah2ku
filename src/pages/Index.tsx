@@ -16,7 +16,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LogOut, TrendingUp, FileText, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { subDays, format as formatDate } from 'date-fns';
-import { MobileNav } from '@/components/MobileNav';
 
 const Index = () => {
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
@@ -121,27 +120,32 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <MobileNav isAdmin={isAdmin} />
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-primary flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
               </div>
-              <h1 className="text-base sm:text-2xl font-bold">FinanceTrack</h1>
+              <h1 className="text-lg sm:text-2xl font-bold hidden sm:block">FinanceTrack</h1>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <div className="hidden md:block">
+                <WalletSelector
+                  selectedWalletId={selectedWalletId}
+                  onSelectWallet={setSelectedWalletId}
+                />
+              </div>
               {isAdmin && (
-                <Button variant="outline" size="icon" onClick={() => navigate('/admin')} className="hidden md:flex h-9 w-9">
-                  <Shield className="w-4 h-4" />
+                <Button variant="outline" size="icon" onClick={() => navigate('/admin')} className="h-8 w-8 sm:h-10 sm:w-10">
+                  <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
               )}
-              <Button variant="outline" size="icon" onClick={() => navigate('/reports')} className="hidden md:flex h-9 w-9">
-                <FileText className="w-4 h-4" />
+              <Button variant="outline" size="icon" onClick={() => navigate('/reports')} className="h-8 w-8 sm:h-10 sm:w-10">
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               <ThemeToggle />
               <LanguageToggle />
-              <Button variant="outline" size="icon" onClick={handleLogout} className="h-8 w-8 sm:h-9 sm:w-9">
+              <Button variant="outline" size="icon" onClick={handleLogout} className="h-8 w-8 sm:h-10 sm:w-10">
                 <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
@@ -150,7 +154,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
+      <main className="container mx-auto px-4 py-4 sm:py-8">
         {/* Mobile Wallet Selector */}
         <div className="md:hidden mb-4">
           <WalletSelector
@@ -169,15 +173,7 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-4 sm:space-y-6">
-            {/* Desktop Wallet Selector */}
-            <div className="hidden md:block">
-              <WalletSelector
-                selectedWalletId={selectedWalletId}
-                onSelectWallet={setSelectedWalletId}
-              />
-            </div>
-
+          <div className="space-y-4 sm:space-y-8">
             {/* Stats Cards */}
             <StatsCards
               totalIncome={totalIncome}

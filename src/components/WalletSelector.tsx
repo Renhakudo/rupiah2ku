@@ -193,11 +193,11 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
   }
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 w-full">
+    <div className="flex items-center gap-3">
       {wallets && wallets.length > 0 ? (
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2">
           <Select value={selectedWalletId || undefined} onValueChange={onSelectWallet}>
-            <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder={t('wallet.select')} />
             </SelectTrigger>
             <SelectContent>
@@ -248,7 +248,7 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
             <Plus className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-[95vw] sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('wallet.create')}</DialogTitle>
             <DialogDescription>Create a new wallet to organize your finances</DialogDescription>
@@ -282,7 +282,7 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
 
       {/* Edit Wallet Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Wallet</DialogTitle>
             <DialogDescription>Update your wallet information</DialogDescription>
@@ -314,7 +314,7 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="max-w-[95vw] sm:max-w-md">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Wallet</AlertDialogTitle>
             <AlertDialogDescription>

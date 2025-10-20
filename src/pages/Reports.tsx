@@ -23,7 +23,6 @@ import { format, subDays } from 'date-fns';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { MobileNav } from '@/components/MobileNav';
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -187,22 +186,21 @@ const Reports = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3">
-          <div className="flex items-center justify-between gap-2">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MobileNav />
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-primary flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
               </div>
-              <h1 className="text-base sm:text-2xl font-bold">FinanceTrack</h1>
+              <h1 className="text-lg sm:text-2xl font-bold">FinanceTrack</h1>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Button variant="outline" size="icon" onClick={() => navigate('/')} className="hidden md:flex h-9 w-9">
-                <Home className="w-4 h-4" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button variant="outline" size="icon" onClick={() => navigate('/')} className="h-8 w-8 sm:h-10 sm:w-10">
+                <Home className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               <ThemeToggle />
               <LanguageToggle />
-              <Button variant="outline" size="icon" onClick={handleLogout} className="h-8 w-8 sm:h-9 sm:w-9">
+              <Button variant="outline" size="icon" onClick={handleLogout} className="h-8 w-8 sm:h-10 sm:w-10">
                 <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
@@ -211,7 +209,7 @@ const Reports = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-full overflow-x-hidden">
+      <main className="container mx-auto px-4 py-4 sm:py-8">
         <div className="space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold">{t('reports.title')}</h2>

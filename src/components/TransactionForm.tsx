@@ -98,12 +98,12 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-primary w-full sm:w-auto">
+        <Button className="bg-gradient-primary">
           <Plus className="w-4 h-4 mr-2" />
           {t('transaction.add')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[95vw] sm:max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('transaction.add')}</DialogTitle>
           <DialogDescription>Add a new income or expense transaction</DialogDescription>

@@ -34,7 +34,7 @@ export const DateRangeFilter = ({
           variant="outline"
           size="sm"
           onClick={() => onQuickFilter(7)}
-          className="transition-smooth text-xs sm:text-sm"
+          className="transition-smooth"
         >
           {t('filter.last7days')}
         </Button>
@@ -42,7 +42,7 @@ export const DateRangeFilter = ({
           variant="outline"
           size="sm"
           onClick={() => onQuickFilter(40)}
-          className="transition-smooth text-xs sm:text-sm"
+          className="transition-smooth"
         >
           {t('filter.last40days')}
         </Button>
@@ -50,7 +50,7 @@ export const DateRangeFilter = ({
           variant="outline"
           size="sm"
           onClick={() => onQuickFilter(60)}
-          className="transition-smooth text-xs sm:text-sm"
+          className="transition-smooth"
         >
           {t('filter.last60days')}
         </Button>
@@ -58,32 +58,30 @@ export const DateRangeFilter = ({
           variant="outline"
           size="sm"
           onClick={() => onQuickFilter(90)}
-          className="transition-smooth text-xs sm:text-sm"
+          className="transition-smooth"
         >
           {t('filter.last90days')}
         </Button>
       </div>
 
       {/* Custom Date Range */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="start-date" className="text-xs sm:text-sm">{t('reports.startDate')}</Label>
+          <Label htmlFor="start-date">{t('reports.startDate')}</Label>
           <Input
             id="start-date"
             type="date"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
-            className="w-full"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="end-date" className="text-xs sm:text-sm">{t('reports.endDate')}</Label>
+          <Label htmlFor="end-date">{t('reports.endDate')}</Label>
           <Input
             id="end-date"
             type="date"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}
-            className="w-full"
           />
         </div>
       </div>
