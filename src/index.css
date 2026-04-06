@@ -2,104 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
-
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
-
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
-
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
-
     --radius: 0.75rem;
-
     --chart-1: 221 83% 53%;
     --chart-2: 142 76% 36%;
     --chart-3: 0 84% 60%;
     --chart-4: 45 93% 47%;
     --chart-5: 280 80% 50%;
-
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 63%));
     --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
     --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 40% 98%));
-
-    --shadow-soft: 0 2px 8px hsl(221 83% 53% / 0.1);
-    --shadow-medium: 0 4px 16px hsl(221 83% 53% / 0.15);
-    --shadow-strong: 0 8px 32px hsl(221 83% 53% / 0.2);
-
+    --shadow-soft: 0 2px 8px hsl(221 83% 53% / 0.08);
+    --shadow-medium: 0 4px 16px hsl(221 83% 53% / 0.12);
+    --shadow-strong: 0 8px 32px hsl(221 83% 53% / 0.18);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-
     --card: 217 33% 17%;
     --card-foreground: 210 40% 98%;
-
     --popover: 217 33% 17%;
     --popover-foreground: 210 40% 98%;
-
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 217 33% 24%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 217 33% 24%;
     --muted-foreground: 215 20% 65%;
-
     --accent: 217 33% 24%;
     --accent-foreground: 210 40% 98%;
-
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 217 33% 24%;
     --input: 217 33% 24%;
     --ring: 221 83% 53%;
-
     --chart-1: 221 83% 63%;
     --chart-2: 142 76% 46%;
     --chart-3: 0 84% 70%;
     --chart-4: 45 93% 57%;
     --chart-5: 280 80% 60%;
-
     --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 43%));
     --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 26%));
     --gradient-card: linear-gradient(135deg, hsl(217 33% 17%), hsl(217 33% 20%));
-
     --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.3);
     --shadow-medium: 0 4px 16px hsl(0 0% 0% / 0.4);
     --shadow-strong: 0 8px 32px hsl(0 0% 0% / 0.5);
@@ -110,8 +80,42 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-background/80 backdrop-blur-lg border border-border/50;
+  }
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:shadow-medium;
+  }
+  .animate-in {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

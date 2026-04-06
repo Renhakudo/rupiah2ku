@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatCurrency } from '@/lib/currency';
@@ -13,43 +13,43 @@ export const StatsCards = ({ totalIncome, totalExpense, netBalance }: StatsCards
   const { t } = useLanguage();
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Card className="shadow-soft hover:shadow-medium transition-smooth bg-gradient-card">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">{t('dashboard.netBalance')}</CardTitle>
-          <Wallet className="w-4 h-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(netBalance)}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Total balance across wallet
-          </p>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <Card className="shadow-soft hover-lift animate-in stagger-1 overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary" />
+        <CardContent className="pt-5 pb-4 px-4 sm:px-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">{t('dashboard.netBalance')}</p>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Wallet className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+          <p className="text-xl sm:text-2xl font-bold tracking-tight break-all">{formatCurrency(netBalance)}</p>
         </CardContent>
       </Card>
 
-      <Card className="shadow-soft hover:shadow-medium transition-smooth bg-gradient-card">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">{t('dashboard.totalIncome')}</CardTitle>
-          <TrendingUp className="w-4 h-4 text-success" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-success">{formatCurrency(totalIncome)}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            All income transactions
-          </p>
+      <Card className="shadow-soft hover-lift animate-in stagger-2 overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-success" />
+        <CardContent className="pt-5 pb-4 px-4 sm:px-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">{t('dashboard.totalIncome')}</p>
+            <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-success" />
+            </div>
+          </div>
+          <p className="text-xl sm:text-2xl font-bold tracking-tight text-success break-all">{formatCurrency(totalIncome)}</p>
         </CardContent>
       </Card>
 
-      <Card className="shadow-soft hover:shadow-medium transition-smooth bg-gradient-card">
-        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-sm font-medium">{t('dashboard.totalExpense')}</CardTitle>
-          <TrendingDown className="w-4 h-4 text-destructive" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpense)}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            All expense transactions
-          </p>
+      <Card className="shadow-soft hover-lift animate-in stagger-3 overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-destructive" />
+        <CardContent className="pt-5 pb-4 px-4 sm:px-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">{t('dashboard.totalExpense')}</p>
+            <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+              <TrendingDown className="w-4 h-4 text-destructive" />
+            </div>
+          </div>
+          <p className="text-xl sm:text-2xl font-bold tracking-tight text-destructive break-all">{formatCurrency(totalExpense)}</p>
         </CardContent>
       </Card>
     </div>

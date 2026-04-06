@@ -10,7 +10,6 @@ interface LanguageContextType {
 
 const translations = {
   en: {
-    // Auth
     'auth.signIn': 'Sign In',
     'auth.signUp': 'Sign Up',
     'auth.email': 'Email',
@@ -21,16 +20,13 @@ const translations = {
     'auth.signingIn': 'Signing in...',
     'auth.signingUp': 'Creating account...',
     'auth.logout': 'Logout',
-    
-    // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.netBalance': 'Net Balance',
     'dashboard.totalIncome': 'Total Income',
     'dashboard.totalExpense': 'Total Expense',
     'dashboard.transactions': 'Transactions',
     'dashboard.noTransactions': 'No transactions yet',
-    
-    // Wallets
+    'dashboard.quickActions': 'Quick Actions',
     'wallet.title': 'Wallets',
     'wallet.create': 'Create Wallet',
     'wallet.name': 'Wallet Name',
@@ -38,8 +34,6 @@ const translations = {
     'wallet.select': 'Select Wallet',
     'wallet.creating': 'Creating...',
     'wallet.noWallets': 'No wallets yet. Create one to get started!',
-    
-    // Transactions
     'transaction.add': 'Add Transaction',
     'transaction.edit': 'Edit Transaction',
     'transaction.type': 'Type',
@@ -53,8 +47,7 @@ const translations = {
     'transaction.save': 'Save',
     'transaction.delete': 'Delete',
     'transaction.cancel': 'Cancel',
-    
-    // Categories
+    'transaction.search': 'Search transactions...',
     'category.salary': 'Salary',
     'category.business': 'Business',
     'category.investment': 'Investment',
@@ -64,8 +57,7 @@ const translations = {
     'category.shopping': 'Shopping',
     'category.bills': 'Bills',
     'category.entertainment': 'Entertainment',
-    
-    // Charts
+    'category.transfer': 'Transfer',
     'chart.incomeVsExpense': 'Income vs Expense',
     'chart.cashflow': 'Cashflow Trend',
     'chart.categoryBreakdown': 'Category Breakdown',
@@ -73,13 +65,9 @@ const translations = {
     'chart.walletComparison': 'Wallet Comparison',
     'chart.monthly': 'Monthly',
     'chart.daily': 'Daily',
-    
-    // Filters
     'filter.dateRange': 'Date Range',
     'filter.category': 'Category',
     'filter.all': 'All',
-    
-    // Reports
     'reports.title': 'Reports',
     'reports.filters': 'Filters',
     'reports.wallet': 'Wallet',
@@ -95,15 +83,11 @@ const translations = {
     'reports.downloadExcel': 'Download Excel',
     'reports.downloadPDF': 'Download PDF',
     'reports.noTransactions': 'No transactions found',
-    
-    // Quick Filters
     'filter.last7days': 'Last 7 Days',
     'filter.last40days': 'Last 40 Days',
     'filter.last60days': 'Last 60 Days',
     'filter.last90days': 'Last 90 Days',
     'filter.custom': 'Custom Range',
-    
-    // Admin
     'admin.title': 'Admin Panel',
     'admin.users': 'User Management',
     'admin.wallets': 'All Wallets',
@@ -119,17 +103,49 @@ const translations = {
     'admin.totalWallets': 'Total Wallets',
     'admin.totalTransactions': 'Total Transactions',
     'admin.owner': 'Owner',
-    
-    // Common
     'common.loading': 'Loading...',
     'common.error': 'Error',
     'common.success': 'Success',
     'common.darkMode': 'Dark Mode',
     'common.lightMode': 'Light Mode',
     'common.home': 'Home',
+    // Transfer
+    'transfer.title': 'Transfer Between Wallets',
+    'transfer.from': 'From Wallet',
+    'transfer.to': 'To Wallet',
+    'transfer.amount': 'Transfer Amount',
+    'transfer.submit': 'Transfer',
+    'transfer.transferring': 'Transferring...',
+    'transfer.success': 'Transfer completed successfully!',
+    'transfer.button': 'Transfer',
+    // Budget
+    'budget.title': 'Budget',
+    'budget.add': 'Set Budget',
+    'budget.category': 'Category',
+    'budget.amount': 'Budget Limit',
+    'budget.spent': 'spent',
+    'budget.remaining': 'remaining',
+    'budget.over': 'over budget',
+    'budget.save': 'Save Budget',
+    'budget.saving': 'Saving...',
+    'budget.nobudgets': 'No budgets set yet',
+    // Savings Goals
+    'goals.title': 'Savings Goals',
+    'goals.add': 'Add Goal',
+    'goals.name': 'Goal Name',
+    'goals.target': 'Target Amount',
+    'goals.current': 'Current Amount',
+    'goals.deadline': 'Deadline',
+    'goals.deposit': 'Deposit',
+    'goals.withdraw': 'Withdraw',
+    'goals.progress': 'Progress',
+    'goals.save': 'Save Goal',
+    'goals.saving': 'Saving...',
+    'goals.nogoals': 'No savings goals yet',
+    'goals.depositAmount': 'Deposit Amount',
+    'goals.completed': 'Completed!',
   },
   id: {
-    // Auth
     'auth.signIn': 'Masuk',
     'auth.signUp': 'Daftar',
     'auth.email': 'Email',
@@ -140,16 +156,13 @@ const translations = {
     'auth.signingIn': 'Masuk...',
     'auth.signingUp': 'Membuat akun...',
     'auth.logout': 'Keluar',
-    
-    // Dashboard
     'dashboard.title': 'Dasbor',
     'dashboard.netBalance': 'Saldo Bersih',
     'dashboard.totalIncome': 'Total Pendapatan',
     'dashboard.totalExpense': 'Total Pengeluaran',
     'dashboard.transactions': 'Transaksi',
     'dashboard.noTransactions': 'Belum ada transaksi',
-    
-    // Wallets
+    'dashboard.quickActions': 'Aksi Cepat',
     'wallet.title': 'Dompet',
     'wallet.create': 'Buat Dompet',
     'wallet.name': 'Nama Dompet',
@@ -157,8 +170,6 @@ const translations = {
     'wallet.select': 'Pilih Dompet',
     'wallet.creating': 'Membuat...',
     'wallet.noWallets': 'Belum ada dompet. Buat satu untuk memulai!',
-    
-    // Transactions
     'transaction.add': 'Tambah Transaksi',
     'transaction.edit': 'Edit Transaksi',
     'transaction.type': 'Tipe',
@@ -172,8 +183,7 @@ const translations = {
     'transaction.save': 'Simpan',
     'transaction.delete': 'Hapus',
     'transaction.cancel': 'Batal',
-    
-    // Categories
+    'transaction.search': 'Cari transaksi...',
     'category.salary': 'Gaji',
     'category.business': 'Bisnis',
     'category.investment': 'Investasi',
@@ -183,8 +193,7 @@ const translations = {
     'category.shopping': 'Belanja',
     'category.bills': 'Tagihan',
     'category.entertainment': 'Hiburan',
-    
-    // Charts
+    'category.transfer': 'Transfer',
     'chart.incomeVsExpense': 'Pendapatan vs Pengeluaran',
     'chart.cashflow': 'Tren Arus Kas',
     'chart.categoryBreakdown': 'Rincian Kategori',
@@ -192,13 +201,9 @@ const translations = {
     'chart.walletComparison': 'Perbandingan Dompet',
     'chart.monthly': 'Bulanan',
     'chart.daily': 'Harian',
-    
-    // Filters
     'filter.dateRange': 'Rentang Tanggal',
     'filter.category': 'Kategori',
     'filter.all': 'Semua',
-    
-    // Reports
     'reports.title': 'Laporan',
     'reports.filters': 'Filter',
     'reports.wallet': 'Dompet',
@@ -214,15 +219,11 @@ const translations = {
     'reports.downloadExcel': 'Unduh Excel',
     'reports.downloadPDF': 'Unduh PDF',
     'reports.noTransactions': 'Tidak ada transaksi',
-    
-    // Quick Filters
     'filter.last7days': '7 Hari Terakhir',
     'filter.last40days': '40 Hari Terakhir',
     'filter.last60days': '60 Hari Terakhir',
     'filter.last90days': '90 Hari Terakhir',
     'filter.custom': 'Rentang Khusus',
-    
-    // Admin
     'admin.title': 'Panel Admin',
     'admin.users': 'Manajemen Pengguna',
     'admin.wallets': 'Semua Dompet',
@@ -238,14 +239,44 @@ const translations = {
     'admin.totalWallets': 'Total Dompet',
     'admin.totalTransactions': 'Total Transaksi',
     'admin.owner': 'Pemilik',
-    
-    // Common
     'common.loading': 'Memuat...',
     'common.error': 'Kesalahan',
     'common.success': 'Berhasil',
     'common.darkMode': 'Mode Gelap',
     'common.lightMode': 'Mode Terang',
     'common.home': 'Beranda',
+    'transfer.title': 'Transfer Antar Dompet',
+    'transfer.from': 'Dari Dompet',
+    'transfer.to': 'Ke Dompet',
+    'transfer.amount': 'Jumlah Transfer',
+    'transfer.submit': 'Transfer',
+    'transfer.transferring': 'Mentransfer...',
+    'transfer.success': 'Transfer berhasil!',
+    'transfer.button': 'Transfer',
+    'budget.title': 'Anggaran',
+    'budget.add': 'Atur Anggaran',
+    'budget.category': 'Kategori',
+    'budget.amount': 'Batas Anggaran',
+    'budget.spent': 'terpakai',
+    'budget.remaining': 'tersisa',
+    'budget.over': 'melebihi anggaran',
+    'budget.save': 'Simpan Anggaran',
+    'budget.saving': 'Menyimpan...',
+    'budget.nobudgets': 'Belum ada anggaran',
+    'goals.title': 'Target Tabungan',
+    'goals.add': 'Tambah Target',
+    'goals.name': 'Nama Target',
+    'goals.target': 'Jumlah Target',
+    'goals.current': 'Jumlah Saat Ini',
+    'goals.deadline': 'Tenggat Waktu',
+    'goals.deposit': 'Setor',
+    'goals.withdraw': 'Tarik',
+    'goals.progress': 'Progres',
+    'goals.save': 'Simpan Target',
+    'goals.saving': 'Menyimpan...',
+    'goals.nogoals': 'Belum ada target tabungan',
+    'goals.depositAmount': 'Jumlah Setoran',
+    'goals.completed': 'Tercapai!',
   },
 };
 
