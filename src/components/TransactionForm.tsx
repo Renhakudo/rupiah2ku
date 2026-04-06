@@ -22,11 +22,14 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Calendar as CalendarIcon, Sparkles, Loader2, Mic, MicOff } from 'lucide-react';
+import { useCallback } from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { parseTransactionWithAI } from '@/services/aiservice';
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 
 interface TransactionFormProps {
   walletId: string;
@@ -42,6 +45,8 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState<Date>(new Date());
+  const [aiInput, setAiInput] = useState('');
+  const [isAiParsing, setIsAiParsing] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
@@ -70,6 +75,40 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
         variant: 'destructive',
       });
     },
+  });
+
+  const handleAiParse = async (overrideInput?: string) => {
+    const inputToParse = overrideInput || aiInput;
+    if (!inputToParse.trim()) return;
+    setIsAiParsing(true);
+    try {
+      const result = await parseTransactionWithAI(inputToParse);
+      setType(result.type as 'income' | 'expense');
+      setAmount(result.amount.toString());
+      setCategory(result.category);
+      setDescription(result.description || '');
+      if (result.date) {
+        setDate(new Date(result.date));
+      }
+      toast({ title: t('common.success'), description: "AI Autocomplete applied! Review and save." });
+    } catch (e: any) {
+      toast({ title: t('ai.error'), description: e.message, variant: 'destructive' });
+    } finally {
+      setIsAiParsing(false);
+    }
+  };
+
+  const handleVoiceResult = useCallback((text: string) => {
+    setAiInput(text);
+    if (text.trim()) {
+      handleAiParse(text);
+    }
+  }, []);
+
+  const { isListening, isSupported, startListening, stopListening } = useVoiceRecognition({
+    onResult: handleVoiceResult,
+    onError: (err) => toast({ title: "Microphone Error", description: err, variant: 'destructive' }),
+    lang: t('ai.listen') === 'Use Voice' ? 'en-US' : 'id-ID'
   });
 
   const resetForm = () => {
@@ -109,6 +148,38 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
           <DialogDescription>Add a new income or expense transaction</DialogDescription>
         </DialogHeader>
         <div className="overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 py-1">
+          {/* AI Magic Box */}
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <Label className="text-primary font-medium text-xs uppercase tracking-wider">AI Magic Parser</Label>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                placeholder={isListening ? t('ai.listening') : t('ai.placeholder')}
+                className="bg-background text-xs sm:text-sm flex-1"
+                onKeyDown={(e) => e.key === 'Enter' && handleAiParse()}
+                disabled={isListening}
+              />
+              {isSupported && (
+                <Button
+                  size="icon"
+                  variant={isListening ? "destructive" : "secondary"}
+                  onClick={isListening ? stopListening : startListening}
+                  className={`shrink-0 ${isListening ? 'animate-pulse' : ''}`}
+                  title={t('ai.listen')}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+              )}
+              <Button size="icon" onClick={() => handleAiParse()} disabled={isAiParsing || !aiInput.trim()} className="shrink-0 bg-primary hover:bg-primary/90">
+                {isAiParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+
           <form id="tx-form" onSubmit={handleSubmit} className="space-y-4 pb-2">
           <div className="space-y-2">
             <Label htmlFor="type">{t('transaction.type')}</Label>

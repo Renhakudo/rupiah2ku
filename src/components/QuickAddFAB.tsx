@@ -20,8 +20,11 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles, Loader2, Mic, MicOff } from 'lucide-react';
+import { useCallback } from 'react';
 import { format } from 'date-fns';
+import { parseTransactionWithAI } from '@/services/aiservice';
+import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 
 interface QuickAddFABProps {
   walletId: string;
@@ -36,6 +39,8 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+  const [aiInput, setAiInput] = useState('');
+  const [isAiParsing, setIsAiParsing] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
@@ -65,6 +70,37 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
     },
   });
 
+  const handleAiParse = async (overrideInput?: string) => {
+    const inputToParse = overrideInput || aiInput;
+    if (!inputToParse.trim()) return;
+    setIsAiParsing(true);
+    try {
+      const result = await parseTransactionWithAI(inputToParse);
+      setType(result.type as 'income' | 'expense');
+      setAmount(result.amount.toString());
+      setCategory(result.category);
+      setDescription(result.description || '');
+      toast({ title: t('common.success'), description: "AI Autocomplete applied! Review and save." });
+    } catch (e: any) {
+      toast({ title: t('ai.error'), description: e.message, variant: 'destructive' });
+    } finally {
+      setIsAiParsing(false);
+    }
+  };
+
+  const handleVoiceResult = useCallback((text: string) => {
+    setAiInput(text);
+    if (text.trim()) {
+      handleAiParse(text);
+    }
+  }, []);
+
+  const { isListening, isSupported, startListening, stopListening } = useVoiceRecognition({
+    onResult: handleVoiceResult,
+    onError: (err) => toast({ title: "Microphone Error", description: err, variant: 'destructive' }),
+    lang: t('ai.listen') === 'Use Voice' ? 'en-US' : 'id-ID'
+  });
+
   const categories = type === 'income' ? incomeCategories : expenseCategories;
 
   return (
@@ -82,6 +118,38 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
           <SheetTitle>{t('transaction.add')}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 px-6 pb-6 overflow-y-auto flex-1">
+          {/* AI Magic Box */}
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <Label className="text-primary font-medium text-xs uppercase tracking-wider">AI Magic Parser</Label>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                placeholder={isListening ? t('ai.listening') : t('ai.placeholder')}
+                className="bg-background text-xs sm:text-sm flex-1"
+                onKeyDown={(e) => e.key === 'Enter' && handleAiParse()}
+                disabled={isListening}
+              />
+              {isSupported && (
+                <Button
+                  size="icon"
+                  variant={isListening ? "destructive" : "secondary"}
+                  onClick={isListening ? stopListening : startListening}
+                  className={`shrink-0 ${isListening ? 'animate-pulse' : ''}`}
+                  title={t('ai.listen')}
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+              )}
+              <Button size="icon" onClick={() => handleAiParse()} disabled={isAiParsing || !aiInput.trim()} className="shrink-0 bg-primary hover:bg-primary/90">
+                {isAiParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <Button
               variant={type === 'expense' ? 'default' : 'outline'}
