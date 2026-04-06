@@ -110,10 +110,11 @@ export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-sm">
-              <DialogHeader>
+              <DialogHeader className="shrink-0">
                 <DialogTitle>{t('budget.add')}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 py-1">
+                <div className="space-y-4 pb-2">
                 <div className="space-y-2">
                   <Label>{t('budget.category')}</Label>
                   <Select value={category} onValueChange={setCategory}>
@@ -129,6 +130,9 @@ export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
                   <Label>{t('budget.amount')}</Label>
                   <Input type="number" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500000" />
                 </div>
+                </div>
+              </div>
+              <div className="pt-3 shrink-0 mt-auto border-t">
                 <Button className="w-full" onClick={() => createBudget.mutate()} disabled={!category || !amount || createBudget.isPending}>
                   {createBudget.isPending ? t('budget.saving') : t('budget.save')}
                 </Button>
@@ -158,10 +162,11 @@ export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-sm">
-            <DialogHeader>
+            <DialogHeader className="shrink-0">
               <DialogTitle>{t('budget.add')}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 py-1">
+              <div className="space-y-4 pb-2">
               <div className="space-y-2">
                 <Label>{t('budget.category')}</Label>
                 <Select value={category} onValueChange={setCategory}>
@@ -177,6 +182,9 @@ export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
                 <Label>{t('budget.amount')}</Label>
                 <Input type="number" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder="500000" />
               </div>
+              </div>
+            </div>
+            <div className="pt-3 shrink-0 mt-auto border-t">
               <Button className="w-full" onClick={() => createBudget.mutate()} disabled={!category || !amount || createBudget.isPending}>
                 {createBudget.isPending ? t('budget.saving') : t('budget.save')}
               </Button>

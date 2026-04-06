@@ -72,16 +72,16 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
       <SheetTrigger asChild>
         <Button
           size="icon"
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-strong bg-gradient-primary hover:shadow-medium transition-all duration-300 hover:scale-105 sm:hidden"
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-strong bg-gradient-primary hover:shadow-medium transition-all duration-300 hover:scale-105 sm:hidden"
         >
           <Plus className="w-6 h-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh]">
-        <SheetHeader>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[85dvh] flex flex-col p-0">
+        <SheetHeader className="p-6 pb-2">
           <SheetTitle>{t('transaction.add')}</SheetTitle>
         </SheetHeader>
-        <div className="space-y-4 pt-4 pb-6">
+        <div className="space-y-4 px-6 pb-6 overflow-y-auto flex-1">
           <div className="flex gap-2">
             <Button
               variant={type === 'expense' ? 'default' : 'outline'}

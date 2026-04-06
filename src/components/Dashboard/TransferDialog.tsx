@@ -100,11 +100,12 @@ export const TransferDialog = () => {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
-        <DialogHeader>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{t('transfer.title')}</DialogTitle>
           <DialogDescription>Move funds between your wallets</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 py-1">
+          <div className="space-y-4 pb-2">
           <div className="space-y-2">
             <Label>{t('transfer.from')}</Label>
             <Select value={fromWalletId} onValueChange={setFromWalletId}>
@@ -146,6 +147,9 @@ export const TransferDialog = () => {
               placeholder="Optional note"
             />
           </div>
+          </div>
+        </div>
+        <div className="pt-3 shrink-0 mt-auto border-t">
           <Button
             className="w-full"
             onClick={() => transfer.mutate()}

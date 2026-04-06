@@ -116,10 +116,11 @@ export const SavingsGoals = () => {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-sm">
-            <DialogHeader>
+            <DialogHeader className="shrink-0">
               <DialogTitle>{t('goals.add')}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 py-1">
+              <div className="space-y-4 pb-2">
               <div className="space-y-2">
                 <Label>{t('goals.name')}</Label>
                 <Input value={name} onChange={e => setName(e.target.value)} placeholder="Emergency Fund" />
@@ -132,6 +133,9 @@ export const SavingsGoals = () => {
                 <Label>{t('goals.deadline')}</Label>
                 <Input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
               </div>
+              </div>
+            </div>
+            <div className="pt-3 shrink-0 mt-auto border-t">
               <Button className="w-full" onClick={() => createGoal.mutate()} disabled={!name || !targetAmount || createGoal.isPending}>
                 {createGoal.isPending ? t('goals.saving') : t('goals.save')}
               </Button>
@@ -195,10 +199,11 @@ export const SavingsGoals = () => {
 
         <Dialog open={!!depositOpen} onOpenChange={() => setDepositOpen(null)}>
           <DialogContent className="max-w-sm">
-            <DialogHeader>
+            <DialogHeader className="shrink-0">
               <DialogTitle>{t('goals.deposit')}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 py-1">
+              <div className="space-y-4 pb-2">
               <div className="space-y-2">
                 <Label>{t('goals.depositAmount')}</Label>
                 <Input
@@ -209,6 +214,9 @@ export const SavingsGoals = () => {
                   placeholder="100000"
                 />
               </div>
+              </div>
+            </div>
+            <div className="pt-3 shrink-0 mt-auto border-t">
               <Button
                 className="w-full"
                 onClick={() => depositOpen && deposit.mutate({ goalId: depositOpen, amount: parseFloat(depositAmount) })}

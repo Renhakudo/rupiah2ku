@@ -104,11 +104,12 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
-        <DialogHeader>
+        <DialogHeader className="shrink-0">
           <DialogTitle>{t('transaction.add')}</DialogTitle>
           <DialogDescription>Add a new income or expense transaction</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="overflow-y-auto flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6 py-1">
+          <form id="tx-form" onSubmit={handleSubmit} className="space-y-4 pb-2">
           <div className="space-y-2">
             <Label htmlFor="type">{t('transaction.type')}</Label>
             <Select value={type} onValueChange={(value: any) => { setType(value); setCategory(''); }}>
@@ -189,10 +190,13 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={createTransaction.isPending || !category}>
+          </form>
+        </div>
+        <div className="pt-3 shrink-0 mt-auto border-t">
+          <Button type="submit" form="tx-form" className="w-full" disabled={createTransaction.isPending || !category}>
             {createTransaction.isPending ? t('transaction.saving') : t('transaction.save')}
           </Button>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
