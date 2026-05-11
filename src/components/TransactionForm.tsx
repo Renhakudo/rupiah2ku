@@ -108,7 +108,7 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
   const { isListening, isSupported, startListening, stopListening } = useVoiceRecognition({
     onResult: handleVoiceResult,
     onError: (err) => toast({ title: "Microphone Error", description: err, variant: 'destructive' }),
-    lang: t('ai.listen') === 'Use Voice' ? 'en-US' : 'id-ID'
+    lang: 'id-ID'
   });
 
   const resetForm = () => {
