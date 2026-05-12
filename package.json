@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "NODE_OPTIONS=--experimental-global-webcrypto vite build",
+    "build:dev": "NODE_OPTIONS=--experimental-global-webcrypto vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -84,6 +84,6 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^0.20.5"
   }
 }
