@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Plus, Wallet, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Wallet, MoreVertical, Pencil, Trash2, Layers } from 'lucide-react';
 
 interface WalletSelectorProps {
   selectedWalletId: string | null;
@@ -201,18 +201,26 @@ export const WalletSelector = ({ selectedWalletId, onSelectWallet }: WalletSelec
               <SelectValue placeholder={t('wallet.select')} />
             </SelectTrigger>
             <SelectContent>
+              {wallets.length > 1 && (
+                <SelectItem value="all">
+                  <div className="flex items-center gap-2 font-medium text-primary">
+                    <Layers className="w-4 h-4" />
+                    <span>{t('wallet.allWallets') || 'All Wallets'}</span>
+                  </div>
+                </SelectItem>
+              )}
               {wallets.map((wallet) => (
                 <SelectItem key={wallet.id} value={wallet.id}>
                   <div className="flex items-center gap-2">
                     <Wallet className="w-4 h-4" />
-                    {wallet.name}
+                    <span>{wallet.name}</span>
                   </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           
-          {selectedWalletId && (
+          {selectedWalletId && selectedWalletId !== 'all' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">

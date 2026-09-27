@@ -241,10 +241,12 @@ const Admin = () => {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-              </div>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/pwa-192x192.png"
+                alt="FinanceTrack"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-contain shadow-xs border border-primary/20 bg-card p-0.5"
+              />
               <h1 className="text-lg sm:text-2xl font-bold">{t('admin.title')}</h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -298,7 +300,7 @@ const Admin = () => {
                      <ResponsiveContainer width="100%" height="100%">
                        <BarChart data={userActivityData}>
                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
+                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} fontSize={12} interval="preserveStartEnd" minTickGap={20} />
                          <YAxis hide />
                          <ChartTooltip content={<ChartTooltipContent />} />
                          <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
@@ -324,7 +326,7 @@ const Admin = () => {
                            </linearGradient>
                          </defs>
                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} fontSize={12} />
+                         <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={10} fontSize={12} interval="preserveStartEnd" minTickGap={20} />
                          <YAxis hide />
                          <ChartTooltip content={<ChartTooltipContent />} />
                          <Area type="monotone" dataKey="count" stroke="var(--color-count)" fill="url(#fillCount)" strokeWidth={2} />

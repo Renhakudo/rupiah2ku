@@ -95,13 +95,16 @@ const Auth = () => {
       <Card className="w-full max-w-md shadow-strong">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center">
-              <Wallet className="w-8 h-8 text-primary-foreground" />
+            <div className="w-20 h-20 rounded-2xl bg-card border border-primary/20 shadow-md flex items-center justify-center p-2">
+              <img
+                src="/pwa-192x192.png"
+                alt="FinanceTrack"
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
           <div>
             <CardTitle className="text-3xl font-bold flex items-center justify-center gap-2">
-              <TrendingUp className="w-6 h-6" />
               FinanceTrack
             </CardTitle>
             <CardDescription className="text-base mt-2">

@@ -188,10 +188,12 @@ const Reports = () => {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
-              </div>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/pwa-192x192.png"
+                alt="FinanceTrack"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-contain shadow-xs border border-primary/20 bg-card p-0.5"
+              />
               <h1 className="text-lg sm:text-2xl font-bold">FinanceTrack</h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
