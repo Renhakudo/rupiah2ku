@@ -37,8 +37,8 @@ export function hasGeminiApiKey(): boolean {
  */
 export async function processReceiptImage(
   file: File,
-  maxDimension = 1600,
-  quality = 0.85
+  maxDimension = 1280,
+  quality = 0.8
 ): Promise<{ base64Data: string; mimeType: string; previewUrl: string }> {
   // Validate file type
   const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
@@ -127,10 +127,30 @@ export async function scanReceiptWithGemini(
     throw new Error(`Gagal terhubung ke scanner API: ${err.message || 'Periksa koneksi internet.'}`);
   }
 
-  const result = await response.json().catch(() => null);
+  const rawText = await response.text().catch(() => '');
+  let result: any = null;
+  if (rawText) {
+    try {
+      result = JSON.parse(rawText);
+    } catch {
+      // Non-JSON response (e.g. Vercel HTML error page)
+    }
+  }
 
   if (!response.ok) {
-    const errorMsg = result?.error || `Gagal memindai struk (Status ${response.status})`;
+    let errorMsg = result?.error;
+    if (!errorMsg) {
+      if (response.status === 413 || rawText.includes('FUNCTION_PAYLOAD_TOO_LARGE')) {
+        errorMsg = 'Ukuran gambar struk terlalu besar untuk diproses server Vercel.';
+      } else if (response.status === 504 || rawText.includes('FUNCTION_INVOCATION_TIMEOUT')) {
+        errorMsg = 'Pemindaian struk memakan waktu terlalu lama (timeout di server). Coba gunakan foto yang lebih fokus.';
+      } else if (response.status === 500) {
+        errorMsg = `Server Vercel mengembalikan Status 500. Pastikan project sudah di-redeploy setelah menambahkan GEMINI_API_KEY.`;
+      } else {
+        errorMsg = `Gagal memindai struk (Status ${response.status})`;
+      }
+    }
+
     const error = new Error(errorMsg);
     if (result?.code === 'GEMINI_API_KEY_REQUIRED' || (response.status === 400 && errorMsg.includes('API Key'))) {
       (error as any).code = 'GEMINI_API_KEY_REQUIRED';

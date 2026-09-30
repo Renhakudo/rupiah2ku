@@ -1,4 +1,69 @@
-import { parseJsonBody, sendJson } from './_utils';
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+  maxDuration: 60,
+};
+
+export const maxDuration = 60;
+
+async function parseJsonBody(req: any): Promise<any> {
+  if (req.body) {
+    if (typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+      return req.body;
+    }
+    if (typeof req.body === 'string') {
+      try {
+        return JSON.parse(req.body);
+      } catch {
+        return {};
+      }
+    }
+    if (Buffer.isBuffer(req.body)) {
+      try {
+        return JSON.parse(req.body.toString('utf-8'));
+      } catch {
+        return {};
+      }
+    }
+  }
+
+  if (req.readableEnded) {
+    return {};
+  }
+
+  return new Promise((resolve) => {
+    const chunks: any[] = [];
+    const timeout = setTimeout(() => resolve({}), 4000);
+
+    req.on('data', (chunk: any) => chunks.push(chunk));
+    req.on('end', () => {
+      clearTimeout(timeout);
+      if (chunks.length === 0) return resolve({});
+      try {
+        const text = Buffer.concat(chunks).toString('utf-8');
+        resolve(JSON.parse(text));
+      } catch {
+        resolve({});
+      }
+    });
+    req.on('error', () => {
+      clearTimeout(timeout);
+      resolve({});
+    });
+  });
+}
+
+function sendJson(res: any, status: number, data: any) {
+  if (typeof res.status === 'function' && typeof res.json === 'function') {
+    return res.status(status).json(data);
+  }
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(data));
+}
 
 const ALLOWED_CATEGORIES = [
   'food',
@@ -119,7 +184,7 @@ Return ONLY valid JSON matching this schema:
     });
 
     if (!response.ok && response.status === 404) {
-      const fallbackModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.0-flash'];
+      const fallbackModels = ['gemini-2.0-flash', 'gemini-flash-latest', 'gemini-1.5-flash', 'gemini-2.5-flash'];
       for (const fallbackModel of fallbackModels) {
         if (fallbackModel === model) continue;
         const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${apiKey.trim()}`;
