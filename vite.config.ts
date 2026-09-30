@@ -1,18 +1,56 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+function devApiPlugin(): Plugin {
+  return {
+    name: "dev-api-middleware",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url?.startsWith("/api/gemini")) {
+          try {
+            const { default: handler } = await import("./api/gemini");
+            await handler(req, res);
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: err.message || "Internal Dev Server Error" }));
+          }
+          return;
+        }
+        if (req.url?.startsWith("/api/ai")) {
+          try {
+            const { default: handler } = await import("./api/ai");
+            await handler(req, res);
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: err.message || "Internal Dev Server Error" }));
+          }
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
-  plugins: [
-    react(),
-    mode === "development" && componentTagger(),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  Object.assign(process.env, env);
+
+  return {
+    server: {
+      host: "::",
+      port: 8080,
+    },
+    plugins: [
+      devApiPlugin(),
+      react(),
+      mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
@@ -94,9 +132,10 @@ export default defineConfig(({ mode }) => ({
       }
     })
   ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-}));
+  };
+});

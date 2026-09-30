@@ -1,11 +1,3 @@
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  baseURL: import.meta.env.VITE_GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
-  dangerouslyAllowBrowser: true,
-});
-
 export interface ParsedTransaction {
   type: 'expense' | 'income' | 'transfer';
   amount: number;
@@ -467,82 +459,37 @@ export function parseTransferHeuristic(
 
 /**
  * Standard AI Transaction Parser.
- * Uses Groq Prompt-Guard or Generative LLM with intelligent heuristic fallback.
+ * Calls secure backend /api/ai with intelligent offline heuristic fallback.
  */
 export async function parseTransactionWithAI(input: string): Promise<ParsedTransaction> {
   const currentDate = formatLocalDate(new Date());
 
-  if (!import.meta.env.VITE_GROQ_API_KEY) {
-    return parseTransactionHeuristic(input, currentDate);
-  }
-
-  const model = import.meta.env.VITE_GROQ_MODEL || "meta-llama/llama-prompt-guard-2-22m";
-
-  // Prompt Guard classifier models check
-  if (model.includes("prompt-guard")) {
-    try {
-      const response = await client.chat.completions.create({
-        model,
-        messages: [{ role: "user", content: input }],
-      });
-
-      const guardScore = parseFloat(response.choices[0]?.message?.content || "0");
-      if (!isNaN(guardScore) && guardScore > 0.85) {
-        throw new Error("Input terdeteksi tidak aman oleh Prompt Guard.");
-      }
-    } catch (e: any) {
-      if (e.message?.includes("tidak aman")) throw e;
-      console.warn("Groq Prompt Guard check bypassed:", e.message);
-    }
-
-    return parseTransactionHeuristic(input, currentDate);
-  }
-
-  // Standard Generative LLM handling
   try {
-    const response = await client.chat.completions.create({
-      model,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: `
-Kamu adalah asisten keuangan pintar. Ekstrak data transaksi dari kalimat input bahasa Indonesia.
-Tanggal hari ini adalah: ${currentDate}.
-Jika input menyatakan "kemarin", "tadi", "hari ini", kurangi/sesuaikan dari tanggal tersebut ke dalam format YYYY-MM-DD.
-
-Kategori yang diperbolehkan hanya: [salary, business, investment, food, transport, shopping, bills, entertainment, other].
-Pilih kategori yang PALING TEPAT. Jika sama sekali tidak ada yang cocok, gunakan "other".
-
-Format Output harus strictly JSON:
-{
-  "type": "expense" atau "income",
-  "amount": angka murni (tanpa titik/koma, contoh: 50000),
-  "category": "salah satu kategori di atas",
-  "description": "catatan singkat",
-  "date": "YYYY-MM-DD"
-}
-          `,
-        },
-        {
-          role: "user",
-          content: input,
-        },
-      ],
-      temperature: 0.1,
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'parse-transaction', input, currentDate }),
     });
 
-    const rawJson = response.choices[0]?.message?.content;
-    if (rawJson) {
-      const parsed = JSON.parse(rawJson);
-      // Double check amount with our Indonesian number parser if LLM missed it
-      if (!parsed.amount || isNaN(parsed.amount)) {
-        parsed.amount = parseIndonesianNumberFromText(input);
+    if (response.ok) {
+      const data = await response.json();
+      if (data?.result) {
+        const parsed = data.result;
+        // Double check amount with our Indonesian number parser if LLM missed it
+        if (!parsed.amount || isNaN(parsed.amount)) {
+          parsed.amount = parseIndonesianNumberFromText(input);
+        }
+        return parsed as ParsedTransaction;
       }
-      return parsed as ParsedTransaction;
+    } else {
+      const errData = await response.json().catch(() => null);
+      if (errData?.unsafe) {
+        throw new Error(errData.error || 'Input terdeteksi tidak aman oleh Prompt Guard.');
+      }
     }
   } catch (err: any) {
-    console.warn("Generative LLM parse failed, falling back to heuristic:", err.message);
+    if (err.message?.includes('tidak aman')) throw err;
+    console.warn('AI API parse failed or not configured, using heuristic fallback:', err.message);
   }
 
   return parseTransactionHeuristic(input, currentDate);
@@ -550,7 +497,7 @@ Format Output harus strictly JSON:
 
 /**
  * AI Voice / Natural Language Transfer Parser.
- * Reuses existing AI / Prompt Guard infrastructure and maps output for inter-wallet transfers.
+ * Reuses existing AI / Prompt Guard infrastructure via secure backend and maps output for inter-wallet transfers.
  */
 export async function parseTransferWithAI(
   input: string,
@@ -559,24 +506,22 @@ export async function parseTransferWithAI(
 ): Promise<ParsedTransfer> {
   const currentDate = formatLocalDate(new Date());
 
-  if (import.meta.env.VITE_GROQ_API_KEY) {
-    const model = import.meta.env.VITE_GROQ_MODEL || "meta-llama/llama-prompt-guard-2-22m";
-    if (model.includes("prompt-guard")) {
-      try {
-        const response = await client.chat.completions.create({
-          model,
-          messages: [{ role: "user", content: input }],
-        });
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'prompt-guard', input }),
+    });
 
-        const guardScore = parseFloat(response.choices[0]?.message?.content || "0");
-        if (!isNaN(guardScore) && guardScore > 0.85) {
-          throw new Error("Input terdeteksi tidak aman oleh Prompt Guard.");
-        }
-      } catch (e: any) {
-        if (e.message?.includes("tidak aman")) throw e;
-        console.warn("Groq Prompt Guard check bypassed for transfer:", e.message);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => null);
+      if (errData?.unsafe) {
+        throw new Error(errData.error || 'Input terdeteksi tidak aman oleh Prompt Guard.');
       }
     }
+  } catch (e: any) {
+    if (e.message?.includes('tidak aman')) throw e;
+    console.warn('Groq Prompt Guard check bypassed for transfer:', e.message);
   }
 
   return parseTransferHeuristic(input, availableWallets, currentWalletId, currentDate);

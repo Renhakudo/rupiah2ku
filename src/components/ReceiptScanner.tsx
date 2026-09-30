@@ -47,7 +47,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [apiKey, setApiKey] = useState(getGeminiApiKey());
-  const [showKeyPrompt, setShowKeyPrompt] = useState(!getGeminiApiKey());
+  const [showKeyPrompt, setShowKeyPrompt] = useState(false);
   const [keySavedToast, setKeySavedToast] = useState(false);
 
   const handleFileChange = async (file: File) => {
@@ -96,13 +96,6 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, 
       return;
     }
 
-    const currentKey = getGeminiApiKey();
-    if (!currentKey) {
-      setShowKeyPrompt(true);
-      setErrorMessage('Gemini API Key dibutuhkan untuk memindai struk.');
-      return;
-    }
-
     setIsScanning(true);
     setErrorMessage(null);
 
@@ -120,7 +113,12 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, 
 
       onScanComplete(result);
     } catch (err: any) {
-      setErrorMessage(err.message || t('receipt.errorFailed'));
+      if (err.code === 'GEMINI_API_KEY_REQUIRED') {
+        setShowKeyPrompt(true);
+        setErrorMessage('Gemini API Key belum disetel di server. Masukkan API key pribadi Anda di bawah.');
+      } else {
+        setErrorMessage(err.message || t('receipt.errorFailed'));
+      }
       toast({
         title: t('common.error'),
         description: err.message || 'Gagal memindai struk.',
@@ -188,7 +186,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, 
             <span>{t('receipt.configureApiKey')}</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Masukkan Google Gemini API Key Anda untuk mengaktifkan pemindai struk (disimpan di browser Anda atau bisa diatur di file <code className="bg-muted px-1 rounded">.env</code> sebagai <code className="bg-muted px-1 rounded">VITE_GEMINI_API_KEY</code>).
+            Masukkan Google Gemini API Key pribadi Anda (opsional/BYOK) jika server belum mengonfigurasinya, atau jika Anda ingin menggunakan kuota API sendiri. Disimpan aman hanya di browser Anda.
           </p>
           <div className="flex gap-2">
             <Input

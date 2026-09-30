@@ -10,23 +10,8 @@ export interface ScannedReceiptResult {
   rawNotes?: string | null;
 }
 
-const ALLOWED_CATEGORIES = [
-  'food',
-  'transport',
-  'shopping',
-  'bills',
-  'entertainment',
-  'salary',
-  'business',
-  'investment',
-  'other',
-];
 
 export function getGeminiApiKey(): string {
-  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (envKey && typeof envKey === 'string' && envKey.trim()) {
-    return envKey.trim();
-  }
   const localKey = localStorage.getItem('rupiah2ku_gemini_api_key');
   if (localKey && localKey.trim()) {
     return localKey.trim();
@@ -116,174 +101,43 @@ export async function processReceiptImage(
 }
 
 /**
- * Scan receipt image using Gemini Multimodal API.
+ * Scan receipt image using Gemini Multimodal API via secure backend endpoint.
  */
 export async function scanReceiptWithGemini(
   base64Data: string,
   mimeType = 'image/jpeg'
 ): Promise<ScannedReceiptResult> {
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error('Gemini API Key belum dikonfigurasi. Masukkan API key pada pengaturan atau .env.');
-  }
+  const userKey = getGeminiApiKey();
 
-  const model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-  const promptText = `
-You are an expert AI Receipt Scanner and OCR extractor for personal finance in Indonesia.
-Extract structured transaction information from this receipt image.
-
-CRITICAL RULES:
-1. If any piece of information is NOT visible, obscured, cut off, or illegible, DO NOT guess or hallucinate. Leave it as null.
-2. "merchant": The business, restaurant, or store name on the receipt. If unreadable, null.
-3. "total_amount": The final payable total amount as a clean number (e.g., 45000). Remove currency symbols, commas, or dots. If not visible, null.
-4. "transaction_date": Date when the transaction occurred, formatted strictly as "YYYY-MM-DD". If missing or unreadable, null.
-5. "category": Must be strictly ONE of: ['food', 'transport', 'shopping', 'bills', 'entertainment', 'salary', 'business', 'investment', 'other'].
-   - Supermarket, minimarket (Indomaret, Alfamart), clothes, retail -> 'shopping'
-   - Restaurants, cafes, food stalls, bakery -> 'food'
-   - Fuel, parking, toll, train, flights -> 'transport'
-   - Electricity, water, internet, phone credit -> 'bills'
-   - Cinema, games, attractions -> 'entertainment'
-   - If uncertain or doesn't fit, use 'other'.
-6. "type": "expense" (unless it explicitly says refund or income).
-7. "currency": e.g. "IDR", "USD", etc.
-8. "items": Array of line items purchased, each with { "name": string, "quantity": number or null, "price": number or null }.
-9. "description": A short, readable summary of what was bought (e.g., "Makan siang di Solaria" or key items).
-
-Return ONLY valid JSON matching this schema:
-{
-  "merchant": string or null,
-  "total_amount": number or null,
-  "transaction_date": string or null,
-  "category": string,
-  "type": "expense",
-  "currency": string or null,
-  "items": [
-    {
-      "name": string,
-      "quantity": number or null,
-      "price": number or null
-    }
-  ],
-  "description": string or null
-}
-`;
-
-  const requestBody = {
-    contents: [
-      {
-        parts: [
-          { text: promptText },
-          {
-            inline_data: {
-              mime_type: mimeType,
-              data: base64Data,
-            },
-          },
-        ],
-      },
-    ],
-    generationConfig: {
-      response_mime_type: 'application/json',
-      temperature: 0.1,
-    },
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
   };
+  if (userKey) {
+    headers['x-gemini-api-key'] = userKey;
+  }
 
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch('/api/gemini', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
+      headers,
+      body: JSON.stringify({ base64Data, mimeType }),
     });
   } catch (err: any) {
-    throw new Error(`Gagal terhubung ke Gemini API: ${err.message || 'Periksa koneksi internet.'}`);
+    throw new Error(`Gagal terhubung ke scanner API: ${err.message || 'Periksa koneksi internet.'}`);
   }
+
+  const result = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    const errorMsg = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-
-    // If 404 (e.g. Google migrated gemini-2.5-flash to gemini-3.8-flash / gemini-flash-latest),
-    // automatically fallback to the active flash model to ensure seamless operation
-    if (response.status === 404) {
-      const fallbackModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.0-flash'];
-      for (const fallbackModel of fallbackModels) {
-        if (fallbackModel === model) continue;
-        const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${apiKey}`;
-        const fallbackRes = await fetch(fallbackUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-        });
-        if (fallbackRes.ok) {
-          return parseGeminiResponse(await fallbackRes.json());
-        }
-      }
+    const errorMsg = result?.error || `Gagal memindai struk (Status ${response.status})`;
+    const error = new Error(errorMsg);
+    if (result?.code === 'GEMINI_API_KEY_REQUIRED' || (response.status === 400 && errorMsg.includes('API Key'))) {
+      (error as any).code = 'GEMINI_API_KEY_REQUIRED';
     }
-
-    throw new Error(`Gemini Error: ${errorMsg}`);
+    throw error;
   }
 
-  const jsonResponse = await response.json();
-  return parseGeminiResponse(jsonResponse);
+  return result as ScannedReceiptResult;
 }
 
-function parseGeminiResponse(jsonResponse: any): ScannedReceiptResult {
-  const candidate = jsonResponse?.candidates?.[0];
-  const textContent = candidate?.content?.parts?.[0]?.text;
-
-  if (!textContent) {
-    throw new Error('Gemini tidak memberikan jawaban yang valid atau gambar tidak dapat diidentifikasi.');
-  }
-
-  let parsed: any;
-  try {
-    const cleaned = textContent.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch (err) {
-    throw new Error('Gagal memproses format data hasil analisis Gemini.');
-  }
-
-  // Validate and sanitize category
-  let category = parsed.category?.toLowerCase() || 'other';
-  if (!ALLOWED_CATEGORIES.includes(category)) {
-    category = 'other';
-  }
-
-  // Extract items list
-  const items: Array<{ name: string; quantity: number | null; price: number | null }> = [];
-  if (Array.isArray(parsed.items)) {
-    for (const item of parsed.items) {
-      if (item && typeof item.name === 'string' && item.name.trim()) {
-        items.push({
-          name: item.name.trim(),
-          quantity: typeof item.quantity === 'number' ? item.quantity : null,
-          price: typeof item.price === 'number' ? item.price : null,
-        });
-      }
-    }
-  }
-
-  // Construct description with item details if available
-  let description = parsed.description || '';
-  if (!description && items.length > 0) {
-    description = items
-      .map((i) => `${i.quantity ? `${i.quantity}x ` : ''}${i.name}`)
-      .join(', ');
-  }
-
-  return {
-    merchant: parsed.merchant || null,
-    totalAmount: typeof parsed.total_amount === 'number' ? parsed.total_amount : null,
-    transactionDate: parsed.transaction_date || null,
-    category,
-    type: parsed.type === 'income' ? 'income' : 'expense',
-    currency: parsed.currency || 'IDR',
-    items,
-    description: description.trim(),
-  };
-}
