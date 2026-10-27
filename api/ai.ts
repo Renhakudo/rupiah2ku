@@ -1,10 +1,35 @@
 import OpenAI from 'openai';
+import fs from 'fs';
+import path from 'path';
 
 export const config = {
   maxDuration: 30,
 };
 
 export const maxDuration = 30;
+
+function getEnv(): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = { ...process.env };
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf-8');
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx > 0) {
+          const key = trimmed.slice(0, eqIdx).trim();
+          const val = trimmed.slice(eqIdx + 1).trim();
+          env[key] = val;
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return env;
+}
 
 async function parseJsonBody(req: any): Promise<any> {
   if (req.body) {
@@ -81,10 +106,11 @@ export default async function handler(req: any, res: any) {
       return sendJson(res, 400, { error: 'Input teks harus disertakan.' });
     }
 
+    const env = getEnv();
     const apiKey =
       (req.headers['x-groq-api-key'] as string) ||
-      process.env.GROQ_API_KEY ||
-      process.env.VITE_GROQ_API_KEY;
+      env.GROQ_API_KEY ||
+      env.VITE_GROQ_API_KEY;
 
     if (!apiKey || !apiKey.trim()) {
       return sendJson(res, 200, {
@@ -94,23 +120,31 @@ export default async function handler(req: any, res: any) {
     }
 
     const baseURL =
-      process.env.GROQ_BASE_URL ||
-      process.env.VITE_GROQ_BASE_URL ||
+      env.GROQ_BASE_URL ||
+      env.VITE_GROQ_BASE_URL ||
       'https://api.groq.com/openai/v1';
 
-    const model =
-      process.env.GROQ_MODEL ||
-      process.env.VITE_GROQ_MODEL ||
-      'meta-llama/llama-prompt-guard-2-22m';
+    const primaryModel =
+      body?.model ||
+      env.GROQ_MODEL ||
+      env.VITE_GROQ_MODEL ||
+      'openai/gpt-oss-120b';
+
+    const fallbackModel =
+      body?.fallbackModel ||
+      env.GROQ_FALLBACK_MODEL ||
+      env.VITE_GROQ_FALLBACK_MODEL ||
+      'meta-llama/llama-prompt-guard-2-86m';
 
     const client = new OpenAI({
       apiKey: apiKey.trim(),
       baseURL,
     });
 
-    if (action === 'prompt-guard' || model.includes('prompt-guard')) {
+    if (action === 'prompt-guard') {
+      const guardModel = primaryModel.includes('prompt-guard') ? primaryModel : fallbackModel;
       const response = await client.chat.completions.create({
-        model,
+        model: guardModel,
         messages: [{ role: 'user', content: input }],
       });
 
@@ -125,6 +159,7 @@ export default async function handler(req: any, res: any) {
       return sendJson(res, 200, {
         safe: true,
         fallback: true,
+        modelUsed: guardModel,
       });
     }
 
@@ -147,26 +182,101 @@ Format Output harus strictly JSON:
 }
 `;
 
-    const response = await client.chat.completions.create({
-      model,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: input },
-      ],
-      temperature: 0.1,
-    });
+    // 1. Try Primary Model (openai/gpt-oss-120b)
+    try {
+      if (!primaryModel.includes('prompt-guard')) {
+        const response = await client.chat.completions.create({
+          model: primaryModel,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: input },
+          ],
+          temperature: 0.1,
+        });
 
-    const rawJson = response.choices[0]?.message?.content;
-    if (rawJson) {
-      const parsed = JSON.parse(rawJson);
-      return sendJson(res, 200, {
-        success: true,
-        result: parsed,
-      });
+        const rawJson = response.choices[0]?.message?.content?.trim();
+        if (rawJson) {
+          const cleanJson = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+          const parsed = JSON.parse(cleanJson);
+          if (parsed && typeof parsed === 'object') {
+            return sendJson(res, 200, {
+              success: true,
+              result: parsed,
+              modelUsed: primaryModel,
+            });
+          }
+        }
+      }
+    } catch (primaryErr: any) {
+      console.warn(`Primary model (${primaryModel}) failed:`, primaryErr?.message || primaryErr);
     }
 
-    return sendJson(res, 200, { fallback: true });
+    // 2. Try Fallback Model (meta-llama/llama-prompt-guard-2-86m or alternative)
+    console.info(`Using fallback model: ${fallbackModel}`);
+    if (fallbackModel.includes('prompt-guard')) {
+      // Guard fallback: check safety and fall back to local heuristic parser safely
+      try {
+        const guardResponse = await client.chat.completions.create({
+          model: fallbackModel,
+          messages: [{ role: 'user', content: input }],
+        });
+
+        const guardScore = parseFloat(guardResponse.choices[0]?.message?.content || '0');
+        if (!isNaN(guardScore) && guardScore > 0.85) {
+          return sendJson(res, 400, {
+            error: 'Input terdeteksi tidak aman oleh Prompt Guard.',
+            unsafe: true,
+          });
+        }
+
+        return sendJson(res, 200, {
+          safe: true,
+          fallback: true,
+          modelUsed: fallbackModel,
+          message: 'Model utama gagal, beralih ke parser heuristik lokal aman.',
+        });
+      } catch (guardErr: any) {
+        console.warn(`Fallback prompt guard (${fallbackModel}) failed:`, guardErr?.message);
+        return sendJson(res, 200, {
+          fallback: true,
+          error: guardErr?.message,
+        });
+      }
+    } else {
+      // Generative fallback
+      try {
+        const fallbackResponse = await client.chat.completions.create({
+          model: fallbackModel,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: input },
+          ],
+          temperature: 0.1,
+        });
+
+        const rawJson = fallbackResponse.choices[0]?.message?.content?.trim();
+        if (rawJson) {
+          const cleanJson = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+          const parsed = JSON.parse(cleanJson);
+          if (parsed && typeof parsed === 'object') {
+            return sendJson(res, 200, {
+              success: true,
+              result: parsed,
+              modelUsed: fallbackModel,
+            });
+          }
+        }
+      } catch (fallbackErr: any) {
+        console.warn(`Fallback generative model (${fallbackModel}) failed:`, fallbackErr?.message);
+      }
+
+      return sendJson(res, 200, {
+        fallback: true,
+        message: 'Parsing AI gagal, beralih ke parser heuristik lokal.',
+      });
+    }
   } catch (err: any) {
     if (err.message?.includes('tidak aman')) {
       return sendJson(res, 400, { error: err.message, unsafe: true });
