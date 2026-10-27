@@ -105,7 +105,8 @@ export async function processReceiptImage(
  */
 export async function scanReceiptWithGemini(
   base64Data: string,
-  mimeType = 'image/jpeg'
+  mimeType = 'image/jpeg',
+  categories?: Array<{ slug: string; name: string } | string>
 ): Promise<ScannedReceiptResult> {
   const userKey = getGeminiApiKey();
 
@@ -121,7 +122,7 @@ export async function scanReceiptWithGemini(
     response = await fetch('/api/gemini', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ base64Data, mimeType }),
+      body: JSON.stringify({ base64Data, mimeType, categories }),
     });
   } catch (err: any) {
     throw new Error(`Gagal terhubung ke scanner API: ${err.message || 'Periksa koneksi internet.'}`);

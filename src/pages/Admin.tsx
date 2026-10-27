@@ -16,10 +16,55 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LogOut, Home, Shield, Users, Wallet, Receipt, Activity, Search, Trash2 } from 'lucide-react';
+import {
+  LogOut,
+  Home,
+  Shield,
+  Users,
+  Wallet,
+  Receipt,
+  Activity,
+  Search,
+  Trash2,
+  Tag,
+  Plus,
+  Pencil,
+  CheckCircle2,
+  Utensils,
+  Car,
+  ShoppingBag,
+  Film,
+  Briefcase,
+  TrendingUp,
+  Landmark,
+  MoreHorizontal,
+  HeartPulse,
+  GraduationCap,
+  Gift,
+  Plane,
+  Coffee,
+  Music,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
@@ -34,6 +79,47 @@ import {
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
+const AVAILABLE_ICONS = [
+  { value: 'tag', label: 'Tag (Umum)' },
+  { value: 'utensils', label: 'Makanan / Kuliner' },
+  { value: 'car', label: 'Transportasi / BBM' },
+  { value: 'shopping-bag', label: 'Belanja / Retail' },
+  { value: 'receipt', label: 'Tagihan & Utilitas' },
+  { value: 'film', label: 'Hiburan / Bioskop' },
+  { value: 'briefcase', label: 'Gaji / Payroll' },
+  { value: 'trending-up', label: 'Bisnis / Usaha' },
+  { value: 'landmark', label: 'Investasi / Tabungan' },
+  { value: 'heart-pulse', label: 'Kesehatan / Medis' },
+  { value: 'graduation-cap', label: 'Pendidikan / Kursus' },
+  { value: 'gift', label: 'Hadiah / Amal / Zakat' },
+  { value: 'plane', label: 'Liburan / Tiket' },
+  { value: 'coffee', label: 'Kafe / Kopi' },
+  { value: 'music', label: 'Musik & Kreatif' },
+  { value: 'more-horizontal', label: 'Lain-lain' },
+];
+
+const renderCategoryIcon = (iconName?: string | null) => {
+  const iconProps = { className: 'w-4 h-4' };
+  switch (iconName) {
+    case 'utensils': return <Utensils {...iconProps} />;
+    case 'car': return <Car {...iconProps} />;
+    case 'shopping-bag': return <ShoppingBag {...iconProps} />;
+    case 'receipt': return <Receipt {...iconProps} />;
+    case 'film': return <Film {...iconProps} />;
+    case 'briefcase': return <Briefcase {...iconProps} />;
+    case 'trending-up': return <TrendingUp {...iconProps} />;
+    case 'landmark': return <Landmark {...iconProps} />;
+    case 'heart-pulse': return <HeartPulse {...iconProps} />;
+    case 'graduation-cap': return <GraduationCap {...iconProps} />;
+    case 'gift': return <Gift {...iconProps} />;
+    case 'plane': return <Plane {...iconProps} />;
+    case 'coffee': return <Coffee {...iconProps} />;
+    case 'music': return <Music {...iconProps} />;
+    case 'more-horizontal': return <MoreHorizontal {...iconProps} />;
+    default: return <Tag {...iconProps} />;
+  }
+};
+
 const Admin = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -47,11 +133,21 @@ const Admin = () => {
   const [searchWallet, setSearchWallet] = useState('');
   const [searchLog, setSearchLog] = useState('');
   const [searchTransaction, setSearchTransaction] = useState('');
+  const [searchCategory, setSearchCategory] = useState('');
 
   // Modals
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const [userStatusToToggle, setUserStatusToToggle] = useState<{ id: string; isActive: boolean } | null>(null);
   const [userRoleToToggle, setUserRoleToToggle] = useState<{ id: string; makeAdmin: boolean } | null>(null);
+
+  // Category Modal & Form States
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<any | null>(null);
+  const [categoryFormName, setCategoryFormName] = useState('');
+  const [categoryFormSlug, setCategoryFormSlug] = useState('');
+  const [categoryFormType, setCategoryFormType] = useState<'expense' | 'income' | 'both'>('expense');
+  const [categoryFormIcon, setCategoryFormIcon] = useState('tag');
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -143,6 +239,20 @@ const Admin = () => {
     enabled: isAdmin,
   });
 
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('type', { ascending: true })
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
+
   const toggleAdminMutation = useMutation({
     mutationFn: async ({ userId, makeAdmin }: { userId: string; makeAdmin: boolean }) => {
       if (makeAdmin) {
@@ -184,6 +294,107 @@ const Admin = () => {
     }
   });
 
+  const saveCategoryMutation = useMutation({
+    mutationFn: async () => {
+      const cleanName = categoryFormName.trim();
+      const cleanSlug = categoryFormSlug.trim().toLowerCase();
+      if (!cleanName || !cleanSlug) throw new Error('Nama dan Slug kategori wajib diisi.');
+
+      if (editingCategory) {
+        const { error } = await supabase
+          .from('categories')
+          .update({
+            name: cleanName,
+            slug: cleanSlug,
+            type: categoryFormType,
+            icon: categoryFormIcon,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingCategory.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('categories')
+          .insert([{
+            name: cleanName,
+            slug: cleanSlug,
+            type: categoryFormType,
+            icon: categoryFormIcon,
+            is_default: false,
+          }]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      setIsCategoryModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast({
+        title: t('common.success'),
+        description: editingCategory
+          ? 'Kategori berhasil diperbarui!'
+          : 'Kategori baru berhasil ditambahkan! AI parser & scanner struk langsung mengenali kategori ini.',
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: t('common.error'),
+        description: err.message || 'Gagal menyimpan kategori',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('categories').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setCategoryToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast({
+        title: t('common.success'),
+        description: 'Kategori berhasil dihapus.',
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: t('common.error'),
+        description: err.message || 'Gagal menghapus kategori',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleOpenAddCategory = () => {
+    setEditingCategory(null);
+    setCategoryFormName('');
+    setCategoryFormSlug('');
+    setCategoryFormType('expense');
+    setCategoryFormIcon('tag');
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleOpenEditCategory = (cat: any) => {
+    setEditingCategory(cat);
+    setCategoryFormName(cat.name);
+    setCategoryFormSlug(cat.slug);
+    setCategoryFormType(cat.type);
+    setCategoryFormIcon(cat.icon || 'tag');
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleCategoryNameChange = (val: string) => {
+    setCategoryFormName(val);
+    if (!editingCategory) {
+      const generatedSlug = val
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      setCategoryFormSlug(generatedSlug);
+    }
+  };
+
   const filteredUsers = users.filter((u: any) => 
     u.full_name?.toLowerCase().includes(searchUser.toLowerCase()) || 
     u.id.includes(searchUser) || 
@@ -205,6 +416,12 @@ const Admin = () => {
     tx.category?.toLowerCase().includes(searchTransaction.toLowerCase()) || 
     tx.wallets?.name?.toLowerCase().includes(searchTransaction.toLowerCase()) || 
     tx.wallets?.profiles?.full_name?.toLowerCase().includes(searchTransaction.toLowerCase())
+  );
+
+  const filteredCategories = categories.filter((cat: any) =>
+    cat.name?.toLowerCase().includes(searchCategory.toLowerCase()) ||
+    cat.slug?.toLowerCase().includes(searchCategory.toLowerCase()) ||
+    cat.type?.toLowerCase().includes(searchCategory.toLowerCase())
   );
 
   // Compute analytics
@@ -283,6 +500,10 @@ const Admin = () => {
           <TabsList className="w-full sm:w-auto flex flex-wrap h-auto overflow-x-auto justify-start border bg-transparent p-1 gap-2">
             <TabsTrigger value="overview" className="data-[state=active]:bg-primary/10">{t('admin.overview')}</TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-primary/10">{t('admin.users')}</TabsTrigger>
+            <TabsTrigger value="categories" className="data-[state=active]:bg-primary/10 flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5" />
+              Kategori
+            </TabsTrigger>
             <TabsTrigger value="transactions" className="data-[state=active]:bg-primary/10">{t('admin.transactions')}</TabsTrigger>
             <TabsTrigger value="logs" className="data-[state=active]:bg-primary/10">Activity Logs</TabsTrigger>
             <TabsTrigger value="wallets" className="data-[state=active]:bg-primary/10">{t('admin.wallets')}</TabsTrigger>
@@ -383,6 +604,156 @@ const Admin = () => {
                           </tr>
                         )
                       })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="categories" className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Tag className="w-5 h-5 text-primary" />
+                    Manajemen Kategori
+                  </CardTitle>
+                  <CardDescription>
+                    Kelola kategori transaksi. AI parser (suara/ketikan) dan scanner struk secara otomatis mendeteksi semua kategori ini.
+                  </CardDescription>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                  <div className="relative w-full sm:w-[240px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cari kategori / slug..."
+                      value={searchCategory}
+                      onChange={(e) => setSearchCategory(e.target.value)}
+                      className="pl-9 h-9 text-sm"
+                    />
+                  </div>
+                  <Button onClick={handleOpenAddCategory} size="sm" className="gap-1.5 bg-gradient-primary">
+                    <Plus className="w-4 h-4" />
+                    Tambah Kategori
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Stats Chips */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                  <div className="p-3 rounded-lg border bg-card/60 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Kategori</p>
+                      <p className="text-xl font-bold">{categories.length}</p>
+                    </div>
+                    <Tag className="w-5 h-5 text-primary/60" />
+                  </div>
+                  <div className="p-3 rounded-lg border bg-card/60 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Kategori Pengeluaran</p>
+                      <p className="text-xl font-bold text-destructive">
+                        {categories.filter((c: any) => c.type === 'expense' || c.type === 'both').length}
+                      </p>
+                    </div>
+                    <Receipt className="w-5 h-5 text-destructive/60" />
+                  </div>
+                  <div className="p-3 rounded-lg border bg-card/60 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Kategori Pemasukan</p>
+                      <p className="text-xl font-bold text-success">
+                        {categories.filter((c: any) => c.type === 'income' || c.type === 'both').length}
+                      </p>
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-success/60" />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-card border-b z-10">
+                      <tr className="text-left text-muted-foreground">
+                        <th className="p-3 font-medium">Kategori</th>
+                        <th className="p-3 font-medium">Slug (Kode AI)</th>
+                        <th className="p-3 font-medium">Tipe</th>
+                        <th className="p-3 font-medium">Status</th>
+                        <th className="p-3 font-medium text-right">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCategories.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                            {searchCategory ? 'Tidak ada kategori yang cocok' : 'Belum ada kategori'}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredCategories.map((cat: any) => (
+                          <tr key={cat.id} className="border-b hover:bg-muted/50 transition">
+                            <td className="p-3 font-medium">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                                  {renderCategoryIcon(cat.icon)}
+                                </div>
+                                <span className="font-semibold text-foreground">{cat.name}</span>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <Badge variant="secondary" className="font-mono text-xs font-normal">
+                                {cat.slug}
+                              </Badge>
+                            </td>
+                            <td className="p-3">
+                              {cat.type === 'income' ? (
+                                <Badge className="bg-success/15 text-success hover:bg-success/20 border-success/30 font-normal">
+                                  Pemasukan
+                                </Badge>
+                              ) : cat.type === 'expense' ? (
+                                <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/20 border-destructive/30 font-normal">
+                                  Pengeluaran
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-primary/15 text-primary hover:bg-primary/20 border-primary/30 font-normal">
+                                  Keduanya
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {cat.is_default ? (
+                                <Badge variant="outline" className="text-[10px] text-muted-foreground border-border/80">
+                                  Default Sistem
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] text-primary border-primary/30 bg-primary/5">
+                                  Kustom Admin
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="p-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                  onClick={() => handleOpenEditCategory(cat)}
+                                  title="Edit Kategori"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => setCategoryToDelete(cat)}
+                                  title="Hapus Kategori"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -569,6 +940,147 @@ const Admin = () => {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={() => userRoleToToggle && toggleAdminMutation.mutate({ userId: userRoleToToggle.id, makeAdmin: userRoleToToggle.makeAdmin })}>
                 Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Category Add/Edit Modal */}
+        <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-primary" />
+                {editingCategory ? 'Edit Kategori' : 'Tambah Kategori Baru'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingCategory
+                  ? 'Perbarui data kategori. Perubahan akan langsung disinkronkan ke AI parser dan scanner struk.'
+                  : 'Kategori baru akan langsung dapat digunakan di form transaksi, scanner struk gambar, dan AI parser suara/ketikan.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveCategoryMutation.mutate();
+              }}
+              className="space-y-4 py-2"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="cat-name">Nama Kategori</Label>
+                <Input
+                  id="cat-name"
+                  placeholder="Contoh: Kesehatan, Pendidikan, Zakat..."
+                  value={categoryFormName}
+                  onChange={(e) => handleCategoryNameChange(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="cat-slug">Slug / Kode Unik AI</Label>
+                  <span className="text-[11px] text-muted-foreground">Huruf kecil, tanpa spasi</span>
+                </div>
+                <Input
+                  id="cat-slug"
+                  placeholder="contoh: health, education, charity..."
+                  value={categoryFormSlug}
+                  onChange={(e) => setCategoryFormSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  required
+                  disabled={editingCategory?.is_default}
+                />
+                {editingCategory?.is_default && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Slug kategori default sistem tidak dapat diubah demi menjaga integritas data historis.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cat-type">Tipe Transaksi</Label>
+                <Select
+                  value={categoryFormType}
+                  onValueChange={(val: any) => setCategoryFormType(val)}
+                >
+                  <SelectTrigger id="cat-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expense">Pengeluaran (Expense)</SelectItem>
+                    <SelectItem value="income">Pemasukan (Income)</SelectItem>
+                    <SelectItem value="both">Keduanya (Pemasukan & Pengeluaran)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cat-icon">Pilihan Ikon</Label>
+                <Select
+                  value={categoryFormIcon}
+                  onValueChange={setCategoryFormIcon}
+                >
+                  <SelectTrigger id="cat-icon">
+                    <div className="flex items-center gap-2">
+                      {renderCategoryIcon(categoryFormIcon)}
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AVAILABLE_ICONS.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        <div className="flex items-center gap-2">
+                          {renderCategoryIcon(item.value)}
+                          <span>{item.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <DialogFooter className="pt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saveCategoryMutation.isPending || !categoryFormName || !categoryFormSlug}
+                  className="bg-gradient-primary gap-1.5"
+                >
+                  {saveCategoryMutation.isPending ? 'Menyimpan...' : 'Simpan Kategori'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Category AlertDialog */}
+        <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hapus Kategori?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Apakah Anda yakin ingin menghapus kategori <strong>{categoryToDelete?.name}</strong> (<code>{categoryToDelete?.slug}</code>)?
+                {categoryToDelete?.is_default && (
+                  <span className="block mt-2 text-destructive font-medium">
+                    Perhatian: Ini adalah kategori default sistem. Transaksi lama dengan kategori ini mungkin akan ditampilkan sebagai kategori lain.
+                  </span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => categoryToDelete && deleteCategoryMutation.mutate(categoryToDelete.id)}
+                className="bg-destructive text-destructive-foreground"
+              >
+                Hapus
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

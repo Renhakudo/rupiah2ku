@@ -22,6 +22,7 @@ import { Trash2, Pencil, TrendingUp, TrendingDown, Search, ArrowLeftRight, Calen
 import { format, isToday, isYesterday } from 'date-fns';
 import { id as idLocale, enUS } from 'date-fns/locale';
 import { EditTransactionDialog } from '@/components/EditTransactionDialog';
+import { useCategories } from '@/services/categoryService';
 
 interface TransactionListProps {
   transactions: any[];
@@ -56,6 +57,7 @@ export const TransactionList = ({ transactions, walletId }: TransactionListProps
   const [search, setSearch] = useState('');
   const { toast } = useToast();
   const { t, language } = useLanguage();
+  const { getCategoryLabel } = useCategories();
   const queryClient = useQueryClient();
 
   const deleteTransaction = useMutation({
@@ -247,7 +249,9 @@ export const TransactionList = ({ transactions, walletId }: TransactionListProps
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                             <p className="text-sm font-medium truncate">
-                              {isTransfer ? t('category.transfer') : t(`category.${transaction.category}`)}
+                              {isTransfer
+                                ? t('category.transfer')
+                                : getCategoryLabel(transaction.category, t(`category.${transaction.category}`))}
                             </p>
                             <Badge
                               variant={isIncome ? 'default' : 'secondary'}

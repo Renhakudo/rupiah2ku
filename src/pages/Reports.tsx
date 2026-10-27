@@ -16,6 +16,7 @@ import { DateRangeFilter } from '@/components/DateRangeFilter';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCategories } from '@/services/categoryService';
 import { formatCurrency } from '@/lib/currency';
 import { LogOut, TrendingUp, FileSpreadsheet, FileText, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +29,7 @@ const Reports = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { getCategoryLabel } = useCategories();
   
   const [selectedWalletId, setSelectedWalletId] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -129,7 +131,7 @@ const Reports = () => {
       Date: format(new Date(t.transaction_date), 'yyyy-MM-dd'),
       Wallet: (t.wallets as any)?.name || 'N/A',
       Type: t.type,
-      Category: t.category,
+      Category: getCategoryLabel(t.category, t(`category.${t.category}`)),
       Amount: parseFloat(t.amount.toString()),
       Description: t.description || '',
     }));
@@ -161,7 +163,7 @@ const Reports = () => {
       format(new Date(t.transaction_date), 'yyyy-MM-dd'),
       (t.wallets as any)?.name || 'N/A',
       t.type,
-      t.category,
+      getCategoryLabel(t.category, t(`category.${t.category}`)),
       formatCurrency(parseFloat(t.amount.toString())),
       t.description || '',
     ]);
@@ -261,7 +263,7 @@ const Reports = () => {
                       <SelectItem value="all">{t('reports.allCategories')}</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat} value={cat}>
-                          {t(`category.${cat}`)}
+                          {getCategoryLabel(cat, t(`category.${cat}`))}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -367,7 +369,7 @@ const Reports = () => {
                         </td>
                         <td className="p-3 text-sm">{(transaction.wallets as any)?.name || 'N/A'}</td>
                         <td className="p-3 text-sm capitalize">{t(`transaction.${transaction.type}`)}</td>
-                        <td className="p-3 text-sm">{t(`category.${transaction.category}`)}</td>
+                        <td className="p-3 text-sm">{getCategoryLabel(transaction.category, t(`category.${transaction.category}`))}</td>
                         <td className={`p-3 text-sm font-semibold ${
                           transaction.type === 'income' ? 'text-success' : 'text-destructive'
                         }`}>

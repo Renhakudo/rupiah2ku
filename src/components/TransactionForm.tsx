@@ -44,12 +44,11 @@ import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { ReceiptScanner } from '@/components/ReceiptScanner';
 import { ScannedReceiptResult } from '@/services/geminiService';
 
+import { useCategories } from '@/services/categoryService';
+
 interface TransactionFormProps {
   walletId: string;
 }
-
-const incomeCategories = ['salary', 'business', 'investment', 'other'];
-const expenseCategories = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'other'];
 
 export const TransactionForm = ({ walletId }: TransactionFormProps) => {
   const [open, setOpen] = useState(false);
@@ -71,6 +70,7 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const { categories, incomeCategories, expenseCategories, getCategoryLabel } = useCategories();
 
   // Fetch wallets for the wallet selector
   const { data: wallets } = useQuery({
@@ -117,7 +117,10 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
     if (!inputToParse.trim()) return;
     setIsAiParsing(true);
     try {
-      const result = await parseTransactionWithAI(inputToParse);
+      const result = await parseTransactionWithAI(
+        inputToParse,
+        categories.map((c) => ({ slug: c.slug, name: c.name, type: c.type }))
+      );
       setType(result.type as 'income' | 'expense');
       setAmount(result.amount.toString());
       setCategory(result.category);
@@ -216,7 +219,7 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
     });
   };
 
-  const categories = type === 'income' ? incomeCategories : expenseCategories;
+  const categoriesForType = type === 'income' ? incomeCategories : expenseCategories;
 
   return (
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
@@ -376,9 +379,9 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {t(`category.${cat}`)}
+                      {categoriesForType.map((cat) => (
+                        <SelectItem key={cat.id || cat.slug} value={cat.slug}>
+                          {cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

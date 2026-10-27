@@ -163,20 +163,55 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    // Dynamic categories extraction
+    const rawCategories: any[] = Array.isArray(body?.categories) && body.categories.length > 0
+      ? body.categories
+      : [
+          { slug: 'salary', name: 'Gaji' },
+          { slug: 'business', name: 'Bisnis' },
+          { slug: 'investment', name: 'Investasi' },
+          { slug: 'food', name: 'Makanan & Minuman' },
+          { slug: 'transport', name: 'Transportasi' },
+          { slug: 'shopping', name: 'Belanja' },
+          { slug: 'bills', name: 'Tagihan & Utilitas' },
+          { slug: 'entertainment', name: 'Hiburan' },
+          { slug: 'other', name: 'Lainnya' },
+        ];
+
+    const allowedSlugs: string[] = rawCategories.map((c) =>
+      typeof c === 'string' ? c.toLowerCase().trim() : c.slug.toLowerCase().trim()
+    );
+    if (!allowedSlugs.includes('other')) {
+      allowedSlugs.push('other');
+    }
+
+    const categoriesDescription = rawCategories
+      .map((c) => (typeof c === 'string' ? c : `${c.slug} (${c.name})`))
+      .join(', ');
+
+    const normalizeCategory = (cat: any) => {
+      if (!cat || typeof cat !== 'string') return 'other';
+      const clean = cat.toLowerCase().trim();
+      const matched = allowedSlugs.find((s) => s === clean);
+      return matched || 'other';
+    };
+
     // Generative LLM Extraction
     const systemPrompt = `
 Kamu adalah asisten keuangan pintar. Ekstrak data transaksi dari kalimat input bahasa Indonesia.
 Tanggal hari ini adalah: ${currentDate || new Date().toISOString().slice(0, 10)}.
 Jika input menyatakan "kemarin", "tadi", "hari ini", kurangi/sesuaikan dari tanggal tersebut ke dalam format YYYY-MM-DD.
 
-Kategori yang diperbolehkan hanya: [salary, business, investment, food, transport, shopping, bills, entertainment, other].
-Pilih kategori yang PALING TEPAT. Jika sama sekali tidak ada yang cocok, gunakan "other".
+Kategori yang diperbolehkan hanya salah satu dari slug berikut:
+[${allowedSlugs.join(', ')}]
+Daftar kategori beserta maknanya: ${categoriesDescription}.
+Pilih slug kategori yang PALING TEPAT dan RELEVAN dengan input kalimat. Jika sama sekali tidak ada yang cocok, gunakan "other".
 
 Format Output harus strictly JSON:
 {
   "type": "expense" atau "income",
   "amount": angka murni (tanpa titik/koma, contoh: 50000),
-  "category": "salah satu kategori di atas",
+  "category": "salah satu slug kategori yang valid dari daftar di atas",
   "description": "catatan singkat",
   "date": "YYYY-MM-DD"
 }
@@ -200,6 +235,7 @@ Format Output harus strictly JSON:
           const cleanJson = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
           const parsed = JSON.parse(cleanJson);
           if (parsed && typeof parsed === 'object') {
+            parsed.category = normalizeCategory(parsed.category);
             return sendJson(res, 200, {
               success: true,
               result: parsed,
@@ -261,6 +297,7 @@ Format Output harus strictly JSON:
           const cleanJson = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
           const parsed = JSON.parse(cleanJson);
           if (parsed && typeof parsed === 'object') {
+            parsed.category = normalizeCategory(parsed.category);
             return sendJson(res, 200, {
               success: true,
               result: parsed,

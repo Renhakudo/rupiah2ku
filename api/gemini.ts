@@ -116,6 +116,21 @@ export default async function handler(req: any, res: any) {
       'gemini-2.5-flash';
     const model = body.model || defaultModel;
 
+    const rawCategories: any[] = Array.isArray(body?.categories) && body.categories.length > 0
+      ? body.categories
+      : ALLOWED_CATEGORIES;
+
+    const allowedSlugs: string[] = rawCategories.map((c) =>
+      typeof c === 'string' ? c.toLowerCase().trim() : c.slug.toLowerCase().trim()
+    );
+    if (!allowedSlugs.includes('other')) {
+      allowedSlugs.push('other');
+    }
+
+    const categoriesDescription = rawCategories
+      .map((c) => (typeof c === 'string' ? c : `${c.slug} (${c.name})`))
+      .join(', ');
+
     const promptText = `
 You are an expert AI Receipt Scanner and OCR extractor for personal finance in Indonesia.
 Extract structured transaction information from this receipt image.
@@ -125,13 +140,14 @@ CRITICAL RULES:
 2. "merchant": The business, restaurant, or store name on the receipt. If unreadable, null.
 3. "total_amount": The final payable total amount as a clean number (e.g., 45000). Remove currency symbols, commas, or dots. If not visible, null.
 4. "transaction_date": Date when the transaction occurred, formatted strictly as "YYYY-MM-DD". If missing or unreadable, null.
-5. "category": Must be strictly ONE of: ['food', 'transport', 'shopping', 'bills', 'entertainment', 'salary', 'business', 'investment', 'other'].
-   - Supermarket, minimarket (Indomaret, Alfamart), clothes, retail -> 'shopping'
+5. "category": Must be strictly ONE slug from this list: [${allowedSlugs.join(', ')}].
+   Categories available: ${categoriesDescription}.
+   - Supermarket, minimarket, retail -> 'shopping'
    - Restaurants, cafes, food stalls, bakery -> 'food'
-   - Fuel, parking, toll, train, flights -> 'transport'
+   - Fuel, parking, toll, travel -> 'transport'
    - Electricity, water, internet, phone credit -> 'bills'
    - Cinema, games, attractions -> 'entertainment'
-   - If uncertain or doesn't fit, use 'other'.
+   Select the most appropriate category slug from the available list. If uncertain or none fits, use 'other'.
 6. "type": "expense" (unless it explicitly says refund or income).
 7. "currency": e.g. "IDR", "USD", etc.
 8. "items": Array of line items purchased, each with { "name": string, "quantity": number or null, "price": number or null }.
@@ -228,10 +244,9 @@ Return ONLY valid JSON matching this schema:
       });
     }
 
-    let category = parsed.category?.toLowerCase() || 'other';
-    if (!ALLOWED_CATEGORIES.includes(category)) {
-      category = 'other';
-    }
+    let category = parsed.category?.toLowerCase()?.trim() || 'other';
+    const matchedCategory = allowedSlugs.find((s) => s === category);
+    category = matchedCategory || 'other';
 
     const items: Array<{ name: string; quantity: number | null; price: number | null }> = [];
     if (Array.isArray(parsed.items)) {

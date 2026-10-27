@@ -277,7 +277,11 @@ function escapeRegExp(string: string): string {
 /**
  * High-accuracy Indonesian Transaction Parser (Heuristic + Semantic Engine)
  */
-export function parseTransactionHeuristic(input: string, currentDate: string): ParsedTransaction {
+export function parseTransactionHeuristic(
+  input: string,
+  currentDate: string,
+  customCategories?: Array<{ slug: string; name: string; type?: string } | string>
+): ParsedTransaction {
   const lower = input.toLowerCase().trim();
 
   // 1. Date parsing
@@ -320,7 +324,53 @@ export function parseTransactionHeuristic(input: string, currentDate: string): P
   let category = 'other';
   let type: 'expense' | 'income' = 'expense';
 
-  // Determine Type & Category
+  // Match custom categories first if provided
+  if (customCategories && Array.isArray(customCategories) && customCategories.length > 0) {
+    for (const cat of customCategories) {
+      const slug = typeof cat === 'string' ? cat : cat.slug;
+      const name = typeof cat === 'string' ? cat : cat.name;
+      const catType = typeof cat === 'string' ? undefined : cat.type;
+
+      if (!slug || slug === 'other') continue;
+      const slugLower = slug.toLowerCase();
+      const nameLower = name ? name.toLowerCase() : '';
+
+      // 1. Check full slug (with underscores/hyphens replaced with spaces too) or full name
+      const slugWithSpaces = slugLower.replace(/[_-]/g, ' ');
+      const matchesFull =
+        new RegExp(`\\b${escapeRegExp(slugLower)}\\b`, 'i').test(lower) ||
+        (slugWithSpaces !== slugLower && new RegExp(`\\b${escapeRegExp(slugWithSpaces)}\\b`, 'i').test(lower)) ||
+        (nameLower && new RegExp(`\\b${escapeRegExp(nameLower)}\\b`, 'i').test(lower));
+
+      if (matchesFull) {
+        category = slug;
+        if (catType === 'income') type = 'income';
+        else if (catType === 'expense') type = 'expense';
+        else type = hasIncomeTrigger ? 'income' : 'expense';
+        break;
+      }
+
+      // 2. Check significant keywords in category name (e.g. "Kesehatan", "Apotek", "Donasi", "Pendidikan")
+      if (nameLower) {
+        const words = nameLower
+          .split(/[\s&/,-]+/)
+          .map((w) => w.trim())
+          .filter((w) => w.length >= 3 && !['dan', 'atau', 'untuk', 'yang', 'dari', 'ke', 'dll'].includes(w));
+
+        const matchedWord = words.find((w) => new RegExp(`\\b${escapeRegExp(w)}\\b`, 'i').test(lower));
+        if (matchedWord) {
+          category = slug;
+          if (catType === 'income') type = 'income';
+          else if (catType === 'expense') type = 'expense';
+          else type = hasIncomeTrigger ? 'income' : 'expense';
+          break;
+        }
+      }
+    }
+  }
+
+  // Determine Type & Category if not matched by custom categories
+  if (category === 'other') {
   if (
     hasIncomeTrigger ||
     (!hasExpenseTrigger &&
@@ -342,6 +392,7 @@ export function parseTransactionHeuristic(input: string, currentDate: string): P
     else if (expenseCategoryKeywords.shopping.test(lower)) category = 'shopping';
     else category = 'other';
   }
+}
 
   return {
     type,
@@ -461,14 +512,17 @@ export function parseTransferHeuristic(
  * Standard AI Transaction Parser.
  * Calls secure backend /api/ai with intelligent offline heuristic fallback.
  */
-export async function parseTransactionWithAI(input: string): Promise<ParsedTransaction> {
+export async function parseTransactionWithAI(
+  input: string,
+  categories?: Array<{ slug: string; name: string; type?: string } | string>
+): Promise<ParsedTransaction> {
   const currentDate = formatLocalDate(new Date());
 
   try {
     const response = await fetch('/api/ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'parse-transaction', input, currentDate }),
+      body: JSON.stringify({ action: 'parse-transaction', input, currentDate, categories }),
     });
 
     if (response.ok) {
@@ -492,7 +546,7 @@ export async function parseTransactionWithAI(input: string): Promise<ParsedTrans
     console.warn('AI API parse failed or not configured, using heuristic fallback:', err.message);
   }
 
-  return parseTransactionHeuristic(input, currentDate);
+  return parseTransactionHeuristic(input, currentDate, categories);
 }
 
 /**

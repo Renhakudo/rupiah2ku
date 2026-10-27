@@ -27,15 +27,14 @@ import { Calendar as CalendarIcon, Store, Wallet, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+import { useCategories } from '@/services/categoryService';
+
 interface EditTransactionDialogProps {
   transaction: any | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
-
-const incomeCategories = ['salary', 'business', 'investment', 'other'];
-const expenseCategories = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'other'];
 
 export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
   transaction,
@@ -46,6 +45,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { categories, incomeCategories, expenseCategories } = useCategories();
 
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -171,7 +171,7 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
     updateMutation.mutate();
   };
 
-  const categories = type === 'income' ? incomeCategories : expenseCategories;
+  const categoriesForType = type === 'income' ? incomeCategories : expenseCategories;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -227,17 +227,17 @@ export const EditTransactionDialog: React.FC<EditTransactionDialogProps> = ({
                 <SelectTrigger id="edit-category">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent>
-                  {/* Allow transfer category if existing */}
-                  {category === 'transfer' && (
-                    <SelectItem value="transfer">{t('category.transfer')}</SelectItem>
-                  )}
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {t(`category.${cat}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                  <SelectContent>
+                    {/* Allow transfer category if existing */}
+                    {category === 'transfer' && (
+                      <SelectItem value="transfer">{t('category.transfer')}</SelectItem>
+                    )}
+                    {categoriesForType.map((cat) => (
+                      <SelectItem key={cat.id || cat.slug} value={cat.slug}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
               </Select>
             </div>
 

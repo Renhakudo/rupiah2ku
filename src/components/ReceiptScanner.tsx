@@ -24,6 +24,7 @@ import {
 } from '@/services/geminiService';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCategories } from '@/services/categoryService';
 
 interface ReceiptScannerProps {
   onScanComplete: (result: ScannedReceiptResult) => void;
@@ -33,6 +34,7 @@ interface ReceiptScannerProps {
 export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, onCancel }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { categories } = useCategories();
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +102,8 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, 
     setErrorMessage(null);
 
     try {
-      const result = await scanReceiptWithGemini(base64Data, mimeType);
+      const categoryPayload = categories.map((c) => ({ slug: c.slug, name: c.name }));
+      const result = await scanReceiptWithGemini(base64Data, mimeType, categoryPayload);
 
       // Clean preview from memory immediately after scanning (do not persist receipt image)
       setPreviewUrl(null);

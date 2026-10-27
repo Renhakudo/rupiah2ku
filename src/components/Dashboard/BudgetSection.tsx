@@ -25,11 +25,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { formatCurrency } from '@/lib/currency';
 import { Target, Plus, Trash2 } from 'lucide-react';
 
+import { useCategories } from '@/services/categoryService';
+
 interface BudgetSectionProps {
   transactions: any[];
 }
-
-const expenseCategories = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'other'];
 
 export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
   const [open, setOpen] = useState(false);
@@ -38,6 +38,7 @@ export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const { expenseCategories } = useCategories();
 
   const { data: budgets = [] } = useQuery({
     queryKey: ['budgets'],
@@ -121,7 +122,7 @@ export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                     <SelectContent>
                       {expenseCategories.map(cat => (
-                        <SelectItem key={cat} value={cat}>{t(`category.${cat}`)}</SelectItem>
+                        <SelectItem key={cat.id || cat.slug} value={cat.slug}>{cat.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -173,7 +174,7 @@ export const BudgetSection = ({ transactions }: BudgetSectionProps) => {
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
                     {expenseCategories.map(cat => (
-                      <SelectItem key={cat} value={cat}>{t(`category.${cat}`)}</SelectItem>
+                      <SelectItem key={cat.id || cat.slug} value={cat.slug}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

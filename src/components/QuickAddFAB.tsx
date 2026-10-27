@@ -37,12 +37,11 @@ import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { ReceiptScanner } from '@/components/ReceiptScanner';
 import { ScannedReceiptResult } from '@/services/geminiService';
 
+import { useCategories } from '@/services/categoryService';
+
 interface QuickAddFABProps {
   walletId: string;
 }
-
-const incomeCategories = ['salary', 'business', 'investment', 'other'];
-const expenseCategories = ['food', 'transport', 'shopping', 'bills', 'entertainment', 'other'];
 
 export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
   const [open, setOpen] = useState(false);
@@ -64,6 +63,7 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const { categories, incomeCategories, expenseCategories } = useCategories();
 
   const { data: wallets } = useQuery({
     queryKey: ['wallets'],
@@ -115,7 +115,10 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
     if (!inputToParse.trim()) return;
     setIsAiParsing(true);
     try {
-      const result = await parseTransactionWithAI(inputToParse);
+      const result = await parseTransactionWithAI(
+        inputToParse,
+        categories.map((c) => ({ slug: c.slug, name: c.name, type: c.type }))
+      );
       setType(result.type as 'income' | 'expense');
       setAmount(result.amount.toString());
       setCategory(result.category);
@@ -187,7 +190,7 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
     }
   };
 
-  const categories = type === 'income' ? incomeCategories : expenseCategories;
+  const categoriesForType = type === 'income' ? incomeCategories : expenseCategories;
 
   return (
     <Sheet open={open} onOpenChange={handleSheetOpenChange}>
@@ -372,16 +375,16 @@ export const QuickAddFAB = ({ walletId }: QuickAddFABProps) => {
               <div className="space-y-2">
                 <Label>{t('transaction.category')}</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {categories.map((cat) => (
+                  {categoriesForType.map((cat) => (
                     <Button
                       type="button"
-                      key={cat}
-                      variant={category === cat ? 'default' : 'outline'}
+                      key={cat.id || cat.slug}
+                      variant={category === cat.slug ? 'default' : 'outline'}
                       size="sm"
-                      className="text-xs"
-                      onClick={() => setCategory(cat)}
+                      className="text-xs truncate"
+                      onClick={() => setCategory(cat.slug)}
                     >
-                      {t(`category.${cat}`)}
+                      {cat.name}
                     </Button>
                   ))}
                 </div>
