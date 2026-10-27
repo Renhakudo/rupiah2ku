@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,9 +29,14 @@ import { useCategories } from '@/services/categoryService';
 interface ReceiptScannerProps {
   onScanComplete: (result: ScannedReceiptResult) => void;
   onCancel: () => void;
+  autoProcessFile?: File | null;
 }
 
-export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, onCancel }) => {
+export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
+  onScanComplete,
+  onCancel,
+  autoProcessFile,
+}) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const { categories } = useCategories();
@@ -51,6 +56,59 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({ onScanComplete, 
   const [apiKey, setApiKey] = useState(getGeminiApiKey());
   const [showKeyPrompt, setShowKeyPrompt] = useState(false);
   const [keySavedToast, setKeySavedToast] = useState(false);
+
+  const hasAutoProcessedRef = useRef(false);
+
+  const processAndScanFile = async (file: File) => {
+    setErrorMessage(null);
+    setIsProcessingImage(true);
+    setIsScanning(true);
+    try {
+      const processed = await processReceiptImage(file);
+      setPreviewUrl(processed.previewUrl);
+      setBase64Data(processed.base64Data);
+      setMimeType(processed.mimeType);
+      setFileName(file.name);
+      setIsProcessingImage(false);
+
+      // Immediately execute Gemini OCR scan
+      const categoryPayload = categories.map((c) => ({ slug: c.slug, name: c.name }));
+      const result = await scanReceiptWithGemini(processed.base64Data, processed.mimeType, categoryPayload);
+
+      // Clean preview from memory
+      setPreviewUrl(null);
+      setBase64Data(null);
+
+      toast({
+        title: t('common.success'),
+        description: t('receipt.success'),
+      });
+
+      onScanComplete(result);
+    } catch (err: any) {
+      if (err.code === 'GEMINI_API_KEY_REQUIRED') {
+        setShowKeyPrompt(true);
+        setErrorMessage('Gemini API Key belum disetel di server. Masukkan API key pribadi Anda di bawah.');
+      } else {
+        setErrorMessage(err.message || t('receipt.errorFailed'));
+      }
+      toast({
+        title: t('common.error'),
+        description: err.message || 'Gagal memindai struk.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessingImage(false);
+      setIsScanning(false);
+    }
+  };
+
+  useEffect(() => {
+    if (autoProcessFile && !hasAutoProcessedRef.current) {
+      hasAutoProcessedRef.current = true;
+      processAndScanFile(autoProcessFile);
+    }
+  }, [autoProcessFile]);
 
   const handleFileChange = async (file: File) => {
     setErrorMessage(null);

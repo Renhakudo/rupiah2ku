@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -43,8 +43,8 @@ import { parseTransactionWithAI } from '@/services/aiservice';
 import { useVoiceRecognition } from '@/hooks/useVoiceRecognition';
 import { ReceiptScanner } from '@/components/ReceiptScanner';
 import { ScannedReceiptResult } from '@/services/geminiService';
-
 import { useCategories } from '@/services/categoryService';
+import { useShareTargetReceipt } from '@/services/shareTargetService';
 
 interface TransactionFormProps {
   walletId: string;
@@ -63,6 +63,7 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
   const [currentWalletId, setCurrentWalletId] = useState(walletId);
 
   const [scannedReceipt, setScannedReceipt] = useState<ScannedReceiptResult | null>(null);
+  const [sharedFileToScan, setSharedFileToScan] = useState<File | null>(null);
 
   const [aiInput, setAiInput] = useState('');
   const [isAiParsing, setIsAiParsing] = useState(false);
@@ -71,6 +72,7 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const { categories, incomeCategories, expenseCategories, getCategoryLabel } = useCategories();
+  const { sharedReceipt, validationError, clearSharedReceipt } = useShareTargetReceipt();
 
   // Fetch wallets for the wallet selector
   const { data: wallets } = useQuery({
@@ -84,6 +86,42 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
       return data;
     },
   });
+
+  // Ensure currentWalletId is synced if initially empty
+  useEffect(() => {
+    if (!currentWalletId && (walletId || wallets?.[0]?.id)) {
+      setCurrentWalletId(walletId || wallets[0].id);
+    }
+  }, [walletId, wallets, currentWalletId]);
+
+  // Handle shared receipt validation errors
+  useEffect(() => {
+    if (validationError) {
+      toast({
+        title: t('common.error'),
+        description: validationError,
+        variant: 'destructive',
+      });
+      clearSharedReceipt();
+    }
+  }, [validationError, toast, t, clearSharedReceipt]);
+
+  // Automatically open dialog and process receipt shared via Android Share Sheet
+  useEffect(() => {
+    if (sharedReceipt && sharedReceipt.file) {
+      if (!currentWalletId && (walletId || wallets?.[0]?.id)) {
+        setCurrentWalletId(walletId || wallets[0].id);
+      }
+      setSharedFileToScan(sharedReceipt.file);
+      setMode('scanner');
+      setOpen(true);
+      toast({
+        title: 'Menerima Gambar dari Menu Bagikan',
+        description: 'Memindai struk secara otomatis dengan Gemini AI...',
+      });
+      clearSharedReceipt();
+    }
+  }, [sharedReceipt, currentWalletId, walletId, wallets, toast, clearSharedReceipt]);
 
   const createTransaction = useMutation({
     mutationFn: async (transactionData: any) => {
@@ -171,6 +209,7 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
     }
 
     setScannedReceipt(result);
+    setSharedFileToScan(null);
     // Switch to review/edit form view
     setMode('form');
   };
@@ -184,6 +223,7 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
     setDate(new Date());
     setCurrentWalletId(walletId);
     setScannedReceipt(null);
+    setSharedFileToScan(null);
     setMode('form');
     setAiInput('');
   };
@@ -246,8 +286,12 @@ export const TransactionForm = ({ walletId }: TransactionFormProps) => {
             /* Receipt Scanner View */
             <div className="py-1">
               <ReceiptScanner
+                autoProcessFile={sharedFileToScan}
                 onScanComplete={handleReceiptScanComplete}
-                onCancel={() => setMode('form')}
+                onCancel={() => {
+                  setSharedFileToScan(null);
+                  setMode('form');
+                }}
               />
             </div>
           ) : (

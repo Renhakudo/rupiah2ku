@@ -9,6 +9,12 @@ function devApiPlugin(): Plugin {
     name: "dev-api-middleware",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
+        if (req.url?.startsWith("/share-target")) {
+          res.statusCode = 303;
+          res.setHeader("Location", "/?shared-target=1");
+          res.end();
+          return;
+        }
         if (req.url?.startsWith("/api/gemini")) {
           try {
             const { default: handler } = await import("./api/gemini");
@@ -54,7 +60,7 @@ export default defineConfig(({ mode }) => {
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "pwa-192x192.png", "pwa-512x512.png", "sw-share-target.js"],
       manifest: {
         name: "RupiahKu",
         short_name: "RupiahKu",
@@ -63,6 +69,34 @@ export default defineConfig(({ mode }) => {
         background_color: "#ffffff",
         display: "standalone",
         start_url: "/",
+        share_target: {
+          action: "/share-target",
+          method: "POST",
+          enctype: "multipart/form-data",
+          params: {
+            title: "title",
+            text: "text",
+            url: "url",
+            files: [
+              {
+                name: "receipt",
+                accept: [
+                  "image/*",
+                  "image/jpeg",
+                  "image/png",
+                  "image/webp",
+                  "image/heic",
+                  "image/heif",
+                  ".jpg",
+                  ".jpeg",
+                  ".png",
+                  ".webp",
+                  ".heic"
+                ]
+              }
+            ]
+          }
+        },
         icons: [
           {
             src: "pwa-192x192.png",
@@ -84,6 +118,7 @@ export default defineConfig(({ mode }) => {
       },
       workbox: {
         cleanupOutdatedCaches: true,
+        importScripts: ['/sw-share-target.js'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

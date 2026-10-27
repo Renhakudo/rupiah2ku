@@ -17,9 +17,10 @@ import { QuickAddFAB } from '@/components/QuickAddFAB';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { LogOut, TrendingUp, FileText, Shield, ChevronDown, Layers, Wallet } from 'lucide-react';
+import { LogOut, TrendingUp, FileText, Shield, ChevronDown, Layers, Wallet, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { subDays, format as formatDate } from 'date-fns';
+import { saveSharedReceipt } from '@/services/shareTargetService';
 import {
   Collapsible,
   CollapsibleContent,
@@ -241,6 +242,59 @@ const Index = () => {
             <div className="flex flex-wrap items-center gap-2">
               <TransactionForm walletId={defaultActionWalletId} />
               <TransferDialog defaultSourceWalletId={selectedWalletId !== 'all' ? selectedWalletId : undefined} />
+              {import.meta.env.DEV && (
+                <Button
+                  id="simulate-share-target-btn"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 400;
+                    canvas.height = 600;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, 400, 600);
+                    ctx.fillStyle = '#000000';
+                    ctx.font = 'bold 20px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('INDOMARET POINT', 200, 45);
+                    ctx.font = '12px monospace';
+                    ctx.fillText('PT INDOMARCO PRISMATAMA', 200, 65);
+                    ctx.fillText('JL. SUDIRMAN NO. 45 JAKARTA', 200, 80);
+                    ctx.fillText('-----------------------------------', 200, 100);
+                    ctx.textAlign = 'left';
+                    ctx.fillText('Tgl: 28-10-2026 14:30 Kasir: Budi', 20, 120);
+                    ctx.fillText('-----------------------------------', 200, 140);
+                    ctx.fillText('ROTI TAWAR SARI ROTI    1   16.500', 20, 165);
+                    ctx.fillText('SUSU ULTRA MILK 1000ML  1   21.000', 20, 195);
+                    ctx.fillText('MINYAK GORENG TROPICAL  1   34.000', 20, 225);
+                    ctx.fillText('-----------------------------------', 200, 255);
+                    ctx.font = 'bold 16px monospace';
+                    ctx.fillText('TOTAL ITEM: 3', 20, 285);
+                    ctx.fillText('TOTAL AKHIR:        Rp 71.500', 20, 315);
+                    ctx.font = '12px monospace';
+                    ctx.fillText('TUNAI:              Rp 100.000', 20, 345);
+                    ctx.fillText('KEMBALI:            Rp 28.500', 20, 375);
+                    ctx.fillText('-----------------------------------', 200, 405);
+                    ctx.textAlign = 'center';
+                    ctx.fillText('TERIMA KASIH ATAS KUNJUNGAN ANDA', 200, 435);
+
+                    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                    if (!blob) return;
+                    const file = new File([blob], 'struk_indomaret.jpg', {
+                      type: 'image/jpeg',
+                      lastModified: Date.now(),
+                    });
+                    await saveSharedReceipt(file, { title: 'Struk Belanja Indomaret' });
+                    window.dispatchEvent(new Event('focus'));
+                  }}
+                  className="text-xs border-dashed border-primary/40 text-primary hover:bg-primary/5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1" />
+                  Test Share Struk
+                </Button>
+              )}
             </div>
 
             {/* Date Filter - Collapsible on mobile */}
